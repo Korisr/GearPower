@@ -15,7 +15,6 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
-using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using Microsoft.Win32;
@@ -46,7 +45,6 @@ namespace GearPower
         private readonly Button settingsTab;
         private readonly Button refreshButton;
         private readonly Border settingsView;
-        private readonly Border headerIcon;
         private readonly Button themeSystemOption;
         private readonly Button themeLightOption;
         private readonly Button themeDarkOption;
@@ -132,7 +130,6 @@ namespace GearPower
             deviceTab = Find<Button>("DeviceTab");
             settingsTab = Find<Button>("SettingsTab");
             settingsView = Find<Border>("SettingsView");
-            headerIcon = Find<Border>("HeaderIcon");
             themeSystemOption = Find<Button>("ThemeSystemOption");
             themeLightOption = Find<Button>("ThemeLightOption");
             themeDarkOption = Find<Button>("ThemeDarkOption");
@@ -238,7 +235,6 @@ namespace GearPower
             };
 
             demoBadge.Visibility = demo ? Visibility.Visible : Visibility.Collapsed;
-            LoadHeaderLogo();
             ShowTab(false);
             UpdateMaximizeGlyph();
             RefreshSettingsState();
@@ -254,105 +250,6 @@ namespace GearPower
         private T Find<T>(string name) where T : class
         {
             return window.FindName(name) as T;
-        }
-
-        private void LoadHeaderLogo()
-        {
-            if (headerIcon == null) return;
-            try
-            {
-                BitmapImage bitmap = null;
-                try
-                {
-                    using (var stream = typeof(UiController).Assembly.GetManifestResourceStream("assets/logo.png"))
-                    {
-                        if (stream != null)
-                        {
-                            bitmap = new BitmapImage();
-                            bitmap.BeginInit();
-                            bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                            bitmap.StreamSource = stream;
-                            bitmap.EndInit();
-                        }
-                    }
-                }
-                catch
-                {
-                    bitmap = null;
-                }
-
-                if (bitmap == null)
-                {
-                    try
-                    {
-                        var resource = Application.GetResourceStream(new Uri("/assets/logo.png", UriKind.Relative));
-                        if (resource != null)
-                        {
-                            bitmap = new BitmapImage();
-                            bitmap.BeginInit();
-                            bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                            bitmap.StreamSource = resource.Stream;
-                            bitmap.EndInit();
-                        }
-                    }
-                    catch
-                    {
-                        bitmap = null;
-                    }
-                }
-
-                if (bitmap == null)
-                {
-                    try
-                    {
-                        bitmap = new BitmapImage();
-                        bitmap.BeginInit();
-                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                        bitmap.UriSource = new Uri("pack://application:,,,/GearPower;component/assets/logo.png", UriKind.Absolute);
-                        bitmap.EndInit();
-                    }
-                    catch
-                    {
-                        bitmap = null;
-                    }
-                }
-
-                if (bitmap == null)
-                {
-                    string path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "assets", "logo.png");
-                    if (System.IO.File.Exists(path))
-                    {
-                        bitmap = new BitmapImage();
-                        bitmap.BeginInit();
-                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                        bitmap.UriSource = new Uri(path, UriKind.Absolute);
-                        bitmap.EndInit();
-                    }
-                }
-
-                if (bitmap != null)
-                {
-                    var image = new Image();
-                    image.Source = bitmap;
-                    image.Stretch = Stretch.UniformToFill;
-                    headerIcon.Child = image;
-                    headerIcon.Clip = new RectangleGeometry(new Rect(0, 0, 46, 46), 14, 14);
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Debug("Logo load failed: " + ex.Message);
-            }
-
-            var fallback = new TextBlock();
-            fallback.Text = "\uE83F";
-            fallback.FontFamily = Theme.IconFont;
-            fallback.FontSize = 22;
-            fallback.Foreground = Theme.Accent;
-            fallback.HorizontalAlignment = HorizontalAlignment.Center;
-            fallback.VerticalAlignment = VerticalAlignment.Center;
-            headerIcon.Child = fallback;
         }
 
         private void CreateTray()
