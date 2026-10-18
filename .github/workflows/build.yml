@@ -33,4 +33,5 @@ jobs:
             dist/CONTRIBUTING.md
             dist/SECURITY.md
             dist/CHANGELOG.md
+            dist/RELEASE_NOTES_*.md
           if-no-files-found: error

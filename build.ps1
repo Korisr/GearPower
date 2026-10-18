@@ -51,6 +51,7 @@ Copy-Item (Join-Path $root "LICENSE") $dist -Force
 Copy-Item (Join-Path $root "CONTRIBUTING.md") $dist -Force
 Copy-Item (Join-Path $root "SECURITY.md") $dist -Force
 Copy-Item (Join-Path $root "CHANGELOG.md") $dist -Force
+Get-ChildItem $root -Filter "RELEASE_NOTES_*.md" -File | Copy-Item -Destination $dist -Force
 $assetTarget = Join-Path $dist "assets"
 New-Item -ItemType Directory -Force -Path $assetTarget | Out-Null
 Get-ChildItem (Join-Path $root "assets") -Filter "*.png" | Copy-Item -Destination $assetTarget -Force

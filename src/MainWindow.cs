@@ -632,13 +632,23 @@ namespace GearPower
             }
         }
 
+        private static void SetOptionState(Button button, bool active)
+        {
+            ApplyOptionState(button, active);
+        }
+
         private static void SetAccentOptionState(Button button, bool active)
+        {
+            ApplyOptionState(button, active);
+        }
+
+        private static void ApplyOptionState(Button button, bool active)
         {
             button.Background = active ? Theme.AccentDim : Theme.GhostHover;
             button.Foreground = active ? Theme.Accent : Theme.Secondary;
+            button.FontWeight = active ? FontWeights.SemiBold : FontWeights.Normal;
             button.BorderBrush = active ? Theme.Accent : Theme.OptionBorder;
             button.BorderThickness = new Thickness(1);
-            button.FontWeight = active ? FontWeights.SemiBold : FontWeights.Normal;
         }
 
         private void UpdateThemeDots()
@@ -986,15 +996,6 @@ namespace GearPower
             SaveSettings();
             ApplyTaskbarColors();
             ShowToast("任务栏状态颜色已恢复默认");
-        }
-
-        private static void SetOptionState(Button button, bool active)
-        {
-            button.Background = active ? Theme.AccentDim : Theme.GhostHover;
-            button.Foreground = active ? Theme.Accent : Theme.Secondary;
-            button.FontWeight = active ? FontWeights.SemiBold : FontWeights.Normal;
-            button.BorderBrush = active ? Theme.OptionSelectedBorder : Theme.OptionBorder;
-            button.BorderThickness = new Thickness(1);
         }
 
         private string AutoLabel()
