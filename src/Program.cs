@@ -24,6 +24,15 @@ namespace GearPower
             bool dump = args != null && args.Any(a => string.Equals(a, "--dump", StringComparison.OrdinalIgnoreCase));
             bool trayPreview = args != null && args.Any(a => string.Equals(a, "--tray-preview", StringComparison.OrdinalIgnoreCase));
 
+            if (!selftest && !dump && !trayPreview)
+            {
+                if (!SingleInstance.Acquire())
+                {
+                    SingleInstance.SignalExisting();
+                    return 0;
+                }
+            }
+
             if (trayPreview)
             {
                 TrayPreview.Run();
@@ -77,6 +86,7 @@ namespace GearPower
 
             var controller = new UiController(window, demo);
             GC.KeepAlive(controller);
+            SingleInstance.Listen(() => controller.ActivateFromSecondInstance());
             app.SessionEnding += (s, e) => controller.PrepareSystemExit();
 
             if (args != null && args.Any(a => string.Equals(a, "--dark", StringComparison.OrdinalIgnoreCase)))

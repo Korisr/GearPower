@@ -520,6 +520,18 @@ namespace GearPower
             TrayMenuWindow.Show(screenX, screenY, readings, ShowMainWindow, Scan, ExitApplication);
         }
 
+        public void ActivateFromSecondInstance()
+        {
+            if (window == null) return;
+            try
+            {
+                window.Dispatcher.BeginInvoke(new Action(ShowMainWindow));
+            }
+            catch
+            {
+            }
+        }
+
         private void ShowMainWindow()
         {
             window.Show();
@@ -539,6 +551,7 @@ namespace GearPower
 
         private bool RestartAsAdministrator()
         {
+            bool released = SingleInstance.ReleaseForRestart();
             try
             {
                 string exe = System.Reflection.Assembly.GetExecutingAssembly().Location;
@@ -565,6 +578,7 @@ namespace GearPower
             }
             catch (Win32Exception ex)
             {
+                if (released) SingleInstance.ReacquireAfterFailedRestart();
                 if (ex.NativeErrorCode == 1223)
                 {
                     Log.Info("Administrator restart canceled by user");
@@ -578,6 +592,7 @@ namespace GearPower
             }
             catch (Exception ex)
             {
+                if (released) SingleInstance.ReacquireAfterFailedRestart();
                 Log.Error("Administrator restart failed: " + ex);
                 ShowToast("无法以管理员身份重启");
             }

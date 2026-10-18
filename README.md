@@ -24,6 +24,7 @@ Windows 10/11 · .NET Framework 4.8 · 单文件 · 本地读取，不联网
 - **托盘后台**：关闭窗口后继续在系统托盘运行；托盘图标是 **iPhone 风格电池**，不带外圈底色，只用电池轮廓和填充比例显示电量最低的设备。
 - **低电量配色**：电池填充按电量变色——绿色正常、橙色偏低、红色低电量；所有设备仍在悬停卡片和右键菜单中列出。
 - **纯本地**：不联网、不上传，只读取 HID 报告和 Windows 设备属性。
+- **单实例**：重复启动不会创建第二个窗口，而是唤回已运行的实例；最小化或隐藏到托盘时同样有效。
 
 ## 下载
 
@@ -169,7 +170,7 @@ GearPower.exe --tray-preview  生成托盘电池预览图
 
 ## 构建
 
-当前版本：**1.0.1**。需要 Windows 10/11 自带的 .NET Framework 4.8 与 `csc.exe`（无需 Visual Studio / .NET SDK）。
+当前版本：**1.0.2**。需要 Windows 10/11 自带的 .NET Framework 4.8 与 `csc.exe`（无需 Visual Studio / .NET SDK）。
 
 ```powershell
 git clone https://github.com/XAVIER0229/GearPower.git
@@ -256,7 +257,7 @@ Razer、ASUS ROG、HyperX、ATK、VXE、Lamzu、Logitech 等名称和商标归�
 
 ## 版本
 
-当前公开版本 **1.0.1**，变更见 [CHANGELOG.md](CHANGELOG.md)。
+当前公开版本 **1.0.2**，变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## License
 
