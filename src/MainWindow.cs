@@ -98,6 +98,7 @@ namespace GearPower
         private bool scanning;
         private bool showingDevices;
         private bool showingSettings;
+        private bool adjustingCards;
         private DateTime lastUpdate = DateTime.MinValue;
         private List<DeviceReading> lastReadings = new List<DeviceReading>();
         private List<InventoryRow> lastInventory = new List<InventoryRow>();
@@ -120,6 +121,7 @@ namespace GearPower
             summaryDot = Find<Ellipse>("SummaryDot");
             cardPanel = Find<WrapPanel>("CardPanel");
             cardScroll = Find<ScrollViewer>("CardScroll");
+            cardScroll.SizeChanged += (s, e) => UpdateCardLayout();
             emptyState = Find<StackPanel>("EmptyState");
             emptyRescan = Find<Button>("EmptyRescan");
             inventoryView = Find<Border>("InventoryView");
@@ -377,6 +379,7 @@ namespace GearPower
             if (window.WindowState != WindowState.Normal) return;
             if (window.ActualWidth < 979.5) window.Width = 980;
             if (window.ActualHeight < 619.5) window.Height = 620;
+            UpdateCardLayout();
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -1210,6 +1213,58 @@ namespace GearPower
             {
                 emptyState.Visibility = empty ? Visibility.Visible : Visibility.Collapsed;
                 cardScroll.Visibility = empty ? Visibility.Collapsed : Visibility.Visible;
+            }
+            UpdateCardLayout();
+            cardScroll.Dispatcher.BeginInvoke(new Action(UpdateCardLayout));
+        }
+
+        private void UpdateCardLayout()
+        {
+            if (adjustingCards || cardPanel == null || cardScroll == null) return;
+            int count = cardPanel.Children.Count;
+            if (count == 0) return;
+
+            double available = cardScroll.ActualWidth;
+            if (double.IsNaN(available) || available <= 0) available = cardScroll.ViewportWidth;
+            if (double.IsNaN(available) || available <= 0) return;
+            available -= 4;
+            if (cardScroll.ComputedVerticalScrollBarVisibility == Visibility.Visible)
+                available -= SystemParameters.VerticalScrollBarWidth;
+
+            const double gap = 16;
+            const double minCardWidth = 275;
+            const double maxCardWidth = 380;
+            int maxColumns = Math.Min(3, count);
+            int columns = 1;
+            for (int candidate = maxColumns; candidate >= 1; candidate--)
+            {
+                double width = (available - gap * candidate) / candidate;
+                if (width >= minCardWidth)
+                {
+                    columns = candidate;
+                    break;
+                }
+            }
+
+            double cardWidth = (available - gap * columns) / columns;
+            if (cardWidth > maxCardWidth) cardWidth = maxCardWidth;
+            if (cardWidth < 1) return;
+
+            adjustingCards = true;
+            try
+            {
+                foreach (UIElement child in cardPanel.Children)
+                {
+                    var card = child as Border;
+                    if (card != null) card.Width = cardWidth;
+                }
+                cardPanel.HorizontalAlignment = count < 3 && cardWidth >= maxCardWidth
+                    ? HorizontalAlignment.Center
+                    : HorizontalAlignment.Left;
+            }
+            finally
+            {
+                adjustingCards = false;
             }
         }
 
