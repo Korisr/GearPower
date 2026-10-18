@@ -104,6 +104,8 @@ namespace GearPower
         private bool adjustingCards;
         private DateTime lastUpdate = DateTime.MinValue;
         private List<DeviceReading> lastReadings = new List<DeviceReading>();
+        private List<DeviceReading> lastConnectedReadings = new List<DeviceReading>();
+        private int lastHidCount;
         private List<InventoryRow> lastInventory = new List<InventoryRow>();
 
         public UiController(Window window, bool demo)
@@ -276,7 +278,7 @@ namespace GearPower
                 tray.HoverEnabled = hoverEnabled;
                 tray.OpenRequested += (s, e) => ShowMainWindow();
                 tray.MenuRequested += (s, e) => ShowTrayMenu(e.ScreenX, e.ScreenY, e.Readings);
-                tray.Update(lastReadings);
+                tray.Update(lastConnectedReadings);
                 tray.EnsureVisible();
             }
             catch (Exception ex)
@@ -335,7 +337,7 @@ namespace GearPower
             {
                 if (taskbarWidget == null) taskbarWidget = new TaskbarWidgetController(SetTaskbarStatus);
                 ApplyTaskbarColors();
-                taskbarWidget.Update(lastReadings);
+                taskbarWidget.Update(lastConnectedReadings);
                 taskbarWidget.SetMode(taskbarMode);
             }
             if (demoMode)
@@ -595,7 +597,7 @@ namespace GearPower
         {
             if (tray != null)
             {
-                tray.Update(lastReadings);
+                tray.Update(lastConnectedReadings);
             }
             if (taskbarWidget != null) taskbarWidget.RefreshTheme();
             if (showingSettings) ShowSettings();
@@ -654,13 +656,13 @@ namespace GearPower
         private void UpdateThemeDots()
         {
             summaryDot.Fill = SummaryDotBrush();
-            footerDot.Fill = lastReadings.Count == 0 ? Theme.Muted : Theme.Accent;
+            footerDot.Fill = lastConnectedReadings.Count == 0 ? Theme.Muted : Theme.Accent;
         }
 
         private Brush SummaryDotBrush()
         {
-            if (lastReadings.Count == 0) return Theme.Muted;
-            var withLevel = lastReadings.Where(r => r.Percent.HasValue).ToList();
+            if (lastConnectedReadings.Count == 0) return Theme.Muted;
+            var withLevel = lastConnectedReadings.Where(r => r.Percent.HasValue).ToList();
             if (withLevel.Count > 1)
             {
                 int min = withLevel.Min(r => r.Percent.Value);
@@ -671,7 +673,7 @@ namespace GearPower
                 int only = withLevel[0].Percent.Value;
                 return only <= 20 ? Theme.Danger : only <= 40 ? Theme.Warn : Theme.Accent;
             }
-            return lastReadings.All(r => r.Asleep) ? Theme.Warn : Theme.Muted;
+            return lastConnectedReadings.All(r => r.Asleep) ? Theme.Warn : Theme.Muted;
         }
 
         private void LoadSettings()
@@ -913,7 +915,7 @@ namespace GearPower
                 taskbarWidget = new TaskbarWidgetController(SetTaskbarStatus);
             }
             ApplyTaskbarColors();
-            taskbarWidget.Update(lastReadings);
+            taskbarWidget.Update(lastConnectedReadings);
             taskbarWidget.SetMode(mode);
             RefreshSettingsState();
             ShowToast(mode == 0 ? "任务栏电量条已关闭" : "任务栏电量条：自动");
@@ -1065,6 +1067,8 @@ namespace GearPower
             }
 
             lastUpdate = DateTime.Now;
+            lastHidCount = result.HidCount;
+            lastConnectedReadings = result.Readings;
             if (!demoMode)
             {
                 foreach (DeviceReading reading in result.Readings)
@@ -1073,56 +1077,29 @@ namespace GearPower
                 }
                 BatteryCache.Save();
             }
-            lastReadings = result.Readings;
+
+            List<DeviceReading> display = result.Readings;
+            if (!demoMode)
+            {
+                try
+                {
+                    display = DeviceHistory.Merge(result.Readings);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Device history merge failed: " + ex);
+                    display = result.Readings;
+                }
+            }
+
+            lastReadings = display;
             lastInventory = result.Inventory;
             if (tray != null) tray.Update(result.Readings);
             if (taskbarWidget != null) taskbarWidget.Update(result.Readings);
 
-            RenderCards(result.Readings);
+            RenderCards(display);
             RenderInventory(result.Inventory);
-
-            int withLevel = result.Readings.Count(r => r.Percent.HasValue);
-            if (result.Readings.Count == 0)
-            {
-                summaryText.Text = "未发现电量设备";
-                summaryDetail.Text = result.HidCount == 0
-                    ? "没有检测到 HID 设备，请检查接收器"
-                    : "已扫描 " + result.HidCount + " 个 HID 接口，可在「设备清单」查看";
-                summaryDot.Fill = Theme.Muted;
-            }
-            else
-            {
-                summaryText.Text = "已发现 " + result.Readings.Count + " 台设备";
-                int asleepCount = result.Readings.Count(r => r.Asleep);
-                int staleCount = result.Readings.Count(r => r.FromCache);
-                if (withLevel > 1)
-                {
-                    int min = result.Readings.Where(r => r.Percent.HasValue).Min(r => r.Percent.Value);
-                    double avg = result.Readings.Where(r => r.Percent.HasValue).Average(r => r.Percent.Value);
-                    summaryDetail.Text = "最低 " + min + "% · 平均 " + Math.Round(avg) + "%";
-                    if (asleepCount > 0) summaryDetail.Text += " · " + asleepCount + " 台休眠";
-                    if (staleCount > 0) summaryDetail.Text += "（含上次读数）";
-                    summaryDot.Fill = min <= 20 ? Theme.Danger : min <= 40 ? Theme.Warn : Theme.Accent;
-                }
-                else if (withLevel == 1)
-                {
-                    int only = result.Readings.Where(r => r.Percent.HasValue).First().Percent.Value;
-                    summaryDetail.Text = (staleCount >= withLevel ? "上次读数 " : "当前读数 ") + only + "%";
-                    if (asleepCount > 0) summaryDetail.Text += " · " + asleepCount + " 台休眠";
-                    if (staleCount > 0) summaryDetail.Text += "（上次读数）";
-                    summaryDot.Fill = only <= 20 ? Theme.Danger : only <= 40 ? Theme.Warn : Theme.Accent;
-                }
-                else if (asleepCount == result.Readings.Count)
-                {
-                    summaryDetail.Text = "接收器在线，设备均处于休眠";
-                    summaryDot.Fill = Theme.Warn;
-                }
-                else
-                {
-                    summaryDetail.Text = "设备在线，但暂未读到电量";
-                    summaryDot.Fill = Theme.Warn;
-                }
-            }
+            UpdateSummary();
 
             scanTimeText.Text = string.Format(CultureInfo.InvariantCulture,
                 "扫描 {0} 个接口 · {1:0.0}s", result.HidCount + result.BluetoothCount, result.Seconds);
@@ -1135,6 +1112,63 @@ namespace GearPower
                 else if (!trayEnabled) footerStatus.Text = "托盘已关闭 · " + refreshText;
                 else footerStatus.Text = tray == null ? "托盘不可用 · " + refreshText : "托盘后台 · " + refreshText;
             }
+        }
+
+        private void UpdateSummary()
+        {
+            int connectedCount = lastConnectedReadings.Count;
+            int historyCount = Math.Max(0, lastReadings.Count - connectedCount);
+            if (connectedCount == 0)
+            {
+                if (historyCount > 0)
+                {
+                    summaryText.Text = "当前没有设备连接";
+                    summaryDetail.Text = "保留 " + historyCount + " 台历史设备";
+                    summaryDot.Fill = Theme.Muted;
+                }
+                else
+                {
+                    summaryText.Text = "未发现电量设备";
+                    summaryDetail.Text = lastHidCount == 0
+                        ? "没有检测到 HID 设备，请检查接收器"
+                        : "已扫描 " + lastHidCount + " 个 HID 接口，可在「设备清单」查看";
+                    summaryDot.Fill = Theme.Muted;
+                }
+                return;
+            }
+
+            summaryText.Text = "已发现 " + connectedCount + " 台设备";
+            int withLevel = lastConnectedReadings.Count(r => r.Percent.HasValue);
+            int asleepCount = lastConnectedReadings.Count(r => r.Asleep);
+            int staleCount = lastConnectedReadings.Count(r => r.FromCache);
+            if (withLevel > 1)
+            {
+                int min = lastConnectedReadings.Where(r => r.Percent.HasValue).Min(r => r.Percent.Value);
+                double avg = lastConnectedReadings.Where(r => r.Percent.HasValue).Average(r => r.Percent.Value);
+                summaryDetail.Text = "最低 " + min + "% · 平均 " + Math.Round(avg) + "%";
+                if (asleepCount > 0) summaryDetail.Text += " · " + asleepCount + " 台休眠";
+                if (staleCount > 0) summaryDetail.Text += "（含上次读数）";
+                summaryDot.Fill = min <= 20 ? Theme.Danger : min <= 40 ? Theme.Warn : Theme.Accent;
+            }
+            else if (withLevel == 1)
+            {
+                int only = lastConnectedReadings.Where(r => r.Percent.HasValue).First().Percent.Value;
+                summaryDetail.Text = (staleCount >= withLevel ? "上次读数 " : "当前读数 ") + only + "%";
+                if (asleepCount > 0) summaryDetail.Text += " · " + asleepCount + " 台休眠";
+                if (staleCount > 0) summaryDetail.Text += "（上次读数）";
+                summaryDot.Fill = only <= 20 ? Theme.Danger : only <= 40 ? Theme.Warn : Theme.Accent;
+            }
+            else if (asleepCount == connectedCount)
+            {
+                summaryDetail.Text = "接收器在线，设备均处于休眠";
+                summaryDot.Fill = Theme.Warn;
+            }
+            else
+            {
+                summaryDetail.Text = "设备在线，但暂未读到电量";
+                summaryDot.Fill = Theme.Warn;
+            }
+            if (historyCount > 0) summaryDetail.Text += " · " + historyCount + " 台历史设备";
         }
 
         private void RenderCards(List<DeviceReading> readings)
@@ -1214,11 +1248,12 @@ namespace GearPower
 
         private Border BuildCard(DeviceReading reading)
         {
-            Color accent = Theme.LevelColor(reading.Percent, reading.Charging);
-            Brush accentBrush = Theme.LevelBrush(reading.Percent, reading.Charging);
+            bool disconnected = reading.Disconnected;
+            Color accent = disconnected ? Theme.MutedColor : Theme.LevelColor(reading.Percent, reading.Charging);
+            Brush accentBrush = disconnected ? Theme.Muted : Theme.LevelBrush(reading.Percent, reading.Charging);
             if (reading.FromCache)
             {
-                Color level = Theme.LevelColor(reading.Percent, reading.Charging);
+                Color level = disconnected ? Theme.MutedColor : Theme.LevelColor(reading.Percent, reading.Charging);
                 var faded = new SolidColorBrush(Color.FromArgb(175, level.R, level.G, level.B));
                 faded.Freeze();
                 accentBrush = faded;
@@ -1297,27 +1332,47 @@ namespace GearPower
             Grid.SetColumn(titleStack, 1);
             header.Children.Add(titleStack);
 
-            string badgeText = null;
-            Color badgeColor = accent;
-            if (reading.FromCache) { badgeText = null; }
-            else if (reading.Charging) { badgeText = "充电中"; badgeColor = Theme.AccentColor; }
-            else if (reading.Percent.HasValue && reading.Percent.Value <= 15) { badgeText = "电量偏低"; badgeColor = Theme.DangerColor; }
-            if (badgeText != null)
+            if (disconnected)
             {
-                var badge = new Border();
-                badge.CornerRadius = new CornerRadius(6);
-                badge.Background = Theme.WithAlpha(badgeColor, 24);
-                badge.BorderBrush = Theme.WithAlpha(badgeColor, 50);
-                badge.BorderThickness = new Thickness(1);
-                badge.Padding = new Thickness(6, 2, 6, 2);
-                badge.VerticalAlignment = VerticalAlignment.Center;
-                var badgeLabel = new TextBlock();
-                badgeLabel.Text = badgeText;
-                badgeLabel.FontSize = 9;
-                badgeLabel.Foreground = new SolidColorBrush(badgeColor);
-                badge.Child = badgeLabel;
-                Grid.SetColumn(badge, 2);
-                header.Children.Add(badge);
+                var delete = new Button();
+                Style ghost = window.TryFindResource("GhostButton") as Style;
+                if (ghost != null) delete.Style = ghost;
+                delete.Content = "删除";
+                delete.FontSize = 9;
+                delete.Padding = new Thickness(7, 3, 7, 3);
+                delete.Foreground = Theme.Muted;
+                delete.BorderBrush = Theme.PanelBorder;
+                delete.BorderThickness = new Thickness(1);
+                delete.VerticalAlignment = VerticalAlignment.Center;
+                delete.ToolTip = "从历史设备中删除这张卡片";
+                delete.Click += (s, e) => DeleteHistoryCard(reading);
+                Grid.SetColumn(delete, 2);
+                header.Children.Add(delete);
+            }
+            else
+            {
+                string badgeText = null;
+                Color badgeColor = accent;
+                if (reading.FromCache) { badgeText = null; }
+                else if (reading.Charging) { badgeText = "充电中"; badgeColor = Theme.AccentColor; }
+                else if (reading.Percent.HasValue && reading.Percent.Value <= 15) { badgeText = "电量偏低"; badgeColor = Theme.DangerColor; }
+                if (badgeText != null)
+                {
+                    var badge = new Border();
+                    badge.CornerRadius = new CornerRadius(6);
+                    badge.Background = Theme.WithAlpha(badgeColor, 24);
+                    badge.BorderBrush = Theme.WithAlpha(badgeColor, 50);
+                    badge.BorderThickness = new Thickness(1);
+                    badge.Padding = new Thickness(6, 2, 6, 2);
+                    badge.VerticalAlignment = VerticalAlignment.Center;
+                    var badgeLabel = new TextBlock();
+                    badgeLabel.Text = badgeText;
+                    badgeLabel.FontSize = 9;
+                    badgeLabel.Foreground = new SolidColorBrush(badgeColor);
+                    badge.Child = badgeLabel;
+                    Grid.SetColumn(badge, 2);
+                    header.Children.Add(badge);
+                }
             }
             root.Children.Add(header);
 
@@ -1410,7 +1465,9 @@ namespace GearPower
             Grid.SetRow(footer, 2);
 
             var updated = new TextBlock();
-            updated.Text = (reading.FromCache ? "上次 " : "更新于 ") + reading.Updated.ToString("HH:mm");
+            updated.Text = reading.Disconnected
+                ? "上次连接 " + LastSeenText(reading)
+                : (reading.FromCache ? "上次 " : "更新于 ") + reading.Updated.ToString("HH:mm");
             updated.FontSize = 9;
             updated.Foreground = Theme.Muted;
             updated.VerticalAlignment = VerticalAlignment.Center;
@@ -1429,8 +1486,26 @@ namespace GearPower
             return card;
         }
 
+        private void DeleteHistoryCard(DeviceReading reading)
+        {
+            if (reading == null || !reading.Disconnected) return;
+            DeviceHistory.Remove(reading.Id);
+            lastReadings.RemoveAll(r => string.Equals(r.Id, reading.Id, StringComparison.OrdinalIgnoreCase));
+            RenderCards(lastReadings);
+            UpdateSummary();
+            ShowToast("已从历史设备中删除 " + reading.Name);
+        }
+
+        private static string LastSeenText(DeviceReading reading)
+        {
+            return reading.Updated.Date == DateTime.Today
+                ? reading.Updated.ToString("HH:mm")
+                : reading.Updated.ToString("MM-dd HH:mm");
+        }
+
         private static string StatusText(DeviceReading reading)
         {
+            if (reading.Disconnected) return "未连接";
             if (reading.Asleep) return "设备休眠";
             if (reading.Charging) return "充电中";
             if (reading.Full) return "已充满";
@@ -1441,6 +1516,12 @@ namespace GearPower
 
         private static string HintText(DeviceReading reading)
         {
+            if (reading.Disconnected)
+            {
+                string hint = "最后连接 " + reading.Updated.ToString("yyyy-MM-dd HH:mm");
+                if (reading.Percent.HasValue) hint += " · 上次电量 " + reading.Percent.Value + "%";
+                return hint;
+            }
             if (reading.Asleep)
             {
                 if (reading.Percent.HasValue)
@@ -1466,7 +1547,9 @@ namespace GearPower
             string state = "状态：" + StatusText(reading);
             if (reading.Percent.HasValue)
             {
-                if (reading.FromCache)
+                if (reading.Disconnected)
+                    state += "（最后连接 " + reading.Updated.ToString("yyyy-MM-dd HH:mm") + "，上次电量 " + reading.Percent.Value + "%）";
+                else if (reading.FromCache)
                     state += "（上次读数 " + reading.Percent.Value + "%，" + reading.Updated.ToString("HH:mm") + "）";
                 else
                     state += "（" + reading.Percent.Value + "%）";
@@ -1474,7 +1557,7 @@ namespace GearPower
             sb.AppendLine(state);
             if (reading.VoltageMv.HasValue) sb.AppendLine("电压：" + reading.VoltageMv.Value + " mV");
             if (!string.IsNullOrEmpty(reading.Note)) sb.AppendLine("说明：" + reading.Note);
-            sb.AppendLine((reading.FromCache ? "上次更新：" : "更新：") + reading.Updated.ToString("HH:mm:ss"));
+            sb.AppendLine((reading.Disconnected ? "最后连接：" : reading.FromCache ? "上次更新：" : "更新：") + reading.Updated.ToString("yyyy-MM-dd HH:mm:ss"));
             if (reading.Vid != 0)
                 sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "VID:PID {0:X4}:{1:X4}", reading.Vid, reading.Pid));
             return sb.ToString().TrimEnd();

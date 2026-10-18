@@ -18,6 +18,7 @@ Windows 10/11 · .NET Framework 4.8 · 单文件 · 本地读取，不联网
 - **电量卡片**：环形电量、百分比、充电/休眠/低电量状态，低电量红色提醒；卡片会按窗口宽度自适应为 2–3 列并铺满可用宽度。
 - **接收器在线也能看到设备**：设备关机或休眠时保留卡片，显示「设备休眠」，唤醒后刷新即可。
 - **休眠保留上次电量**：设备进入休眠后会继续显示最后一次成功读取的电量和时间，并用淡色环 +「上次读数」标注；缓存保留 30 天。
+- **历史设备**：连接过本机的设备会保留卡片并标记「未连接」；未连接卡片可单独删除，历史不会进入托盘或任务栏。数据保存在 `%LOCALAPPDATA%\GearPower\device-history.tsv`。
 - **设备清单**：列出所有 HID 接口的 VID/PID、用途页、接口号、报告长度与字段；点击任意一行可复制该设备的诊断信息。
 - **自动刷新**：30 秒 / 60 秒 / 5 分钟 / 关闭，在「设置」页调整，保存在注册表。
 - **浅色 / 深色 / 跟随系统**：在「设置 → 外观」切换，跟随系统时会在 Windows 切换白天/黑夜后自动更新。
@@ -176,7 +177,7 @@ GearPower.exe --tray-preview  生成托盘电池预览图
 
 ## 构建
 
-当前版本：**1.1.0-beta**。需要 Windows 10/11 自带的 .NET Framework 4.8 与 `csc.exe`（无需 Visual Studio / .NET SDK）。
+当前版本：**1.1.0**。需要 Windows 10/11 自带的 .NET Framework 4.8 与 `csc.exe`（无需 Visual Studio / .NET SDK）。
 
 ```powershell
 git clone https://github.com/XAVIER0229/GearPower.git
@@ -205,6 +206,7 @@ src/
   MainWindow.cs     WPF 界面逻辑、自绘标题栏与主题菜单
   BatteryRing.cs    环形电量控件
   BatteryCache.cs   休眠设备的上次电量缓存
+  DeviceHistory.cs  连接过本机的设备历史与删除
   TrayIcon.cs       托盘电池图标、悬停检测
   TrayHoverWindow.cs 托盘悬停卡片
   TrayMenuWindow.cs 自绘托盘右键菜单
@@ -263,7 +265,7 @@ Razer、ASUS ROG、HyperX、ATK、VXE、Lamzu、Logitech 等名称和商标归�
 
 ## 版本
 
-当前公开版本 **1.1.0-beta**，变更见 [CHANGELOG.md](CHANGELOG.md)。
+当前公开版本 **1.1.0**，变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## License
 

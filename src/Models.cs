@@ -43,6 +43,7 @@ namespace GearPower
         public bool IsBluetooth;
         public bool IsDemo;
         public bool FromCache;
+        public bool Disconnected;
 
         public bool HasLevel
         {
@@ -53,6 +54,7 @@ namespace GearPower
         {
             get
             {
+                if (Disconnected) return ChargeState.Unknown;
                 if (Charging) return ChargeState.Charging;
                 if (Full) return ChargeState.Full;
                 if (Asleep) return ChargeState.Unknown;
