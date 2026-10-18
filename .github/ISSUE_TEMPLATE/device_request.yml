@@ -1,0 +1,45 @@
+name: 设备支持请求
+description: 报告尚未支持的鼠标、耳机或键盘，附上诊断信息
+title: "[Device] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈。请先运行「GearPower.exe --dump」，并在「设备清单」中复制诊断信息。
+        发布前请删除设备序列号、唯一 ID 等个人信息。
+  - type: input
+    id: device
+    attributes:
+      label: 设备型号
+      placeholder: "例如 MCHOSE K7 Ultra、Razer Viper V3 Pro"
+    validations:
+      required: true
+  - type: input
+    id: connection
+    attributes:
+      label: 连接方式
+      placeholder: "2.4G 接收器 / 有线 USB / 蓝牙"
+    validations:
+      required: true
+  - type: input
+    id: ids
+    attributes:
+      label: VID:PID
+      placeholder: "可从设备清单或 hid-dump.txt 复制"
+    validations:
+      required: false
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: 诊断信息
+      description: 粘贴「复制诊断信息」的内容，或附上 hid-dump.txt 的相关片段
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望结果
+      placeholder: "例如希望在电量页显示该设备的电量"
+    validations:
+      required: true

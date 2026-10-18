@@ -15,6 +15,14 @@ namespace GearPower
         Dark
     }
 
+    public enum AccentPreset
+    {
+        Green,
+        Pink,
+        Yellow,
+        Blue
+    }
+
     public static class ThemeManager
     {
         private const string SettingsPath = @"Software\GearPower";
@@ -26,6 +34,7 @@ namespace GearPower
         private static DispatcherTimer titleTimer;
 
         public static ThemeMode Mode { get; private set; }
+        public static AccentPreset Accent { get; private set; }
         public static bool IsDark { get; private set; }
         public static event EventHandler Changed;
 
@@ -33,6 +42,7 @@ namespace GearPower
         {
             window = owner;
             Mode = LoadMode();
+            Accent = LoadAccent();
             Apply(false);
             if (window != null)
             {
@@ -60,6 +70,18 @@ namespace GearPower
         {
             Mode = mode;
             if (save) SaveMode();
+            Apply(true);
+        }
+
+        public static void SetAccent(AccentPreset accent)
+        {
+            SetAccent(accent, true);
+        }
+
+        public static void SetAccent(AccentPreset accent, bool save)
+        {
+            Accent = accent;
+            if (save) SaveAccent();
             Apply(true);
         }
 
@@ -105,6 +127,7 @@ namespace GearPower
         {
             IsDark = Mode == ThemeMode.Dark || (Mode == ThemeMode.System && SystemUsesDark());
             values = IsDark ? BuildDark() : BuildLight();
+            ApplyAccent(values);
 
             if (window != null)
             {
@@ -173,6 +196,52 @@ namespace GearPower
             }
         }
 
+        private static AccentPreset LoadAccent()
+        {
+            AccentPreset? accent = ReadAccent(SettingsPath);
+            if (!accent.HasValue) accent = ReadAccent(LegacySettingsPath);
+            return accent.HasValue ? accent.Value : AccentPreset.Green;
+        }
+
+        private static AccentPreset? ReadAccent(string path)
+        {
+            try
+            {
+                using (RegistryKey key = Registry.CurrentUser.OpenSubKey(path))
+                {
+                    if (key != null)
+                    {
+                        string text = key.GetValue("AccentColor") as string;
+                        if (!string.IsNullOrEmpty(text))
+                        {
+                            if (text.Equals("green", StringComparison.OrdinalIgnoreCase)) return AccentPreset.Green;
+                            if (text.Equals("pink", StringComparison.OrdinalIgnoreCase)) return AccentPreset.Pink;
+                            if (text.Equals("yellow", StringComparison.OrdinalIgnoreCase)) return AccentPreset.Yellow;
+                            if (text.Equals("blue", StringComparison.OrdinalIgnoreCase)) return AccentPreset.Blue;
+                        }
+                    }
+                }
+            }
+            catch
+            {
+            }
+            return null;
+        }
+
+        private static void SaveAccent()
+        {
+            try
+            {
+                using (RegistryKey key = Registry.CurrentUser.CreateSubKey(SettingsPath))
+                {
+                    if (key != null) key.SetValue("AccentColor", Accent.ToString().ToLowerInvariant());
+                }
+            }
+            catch
+            {
+            }
+        }
+
         private static bool SystemUsesDark()
         {
             try
@@ -190,6 +259,87 @@ namespace GearPower
             {
             }
             return false;
+        }
+
+        private static void ApplyAccent(Dictionary<string, object> d)
+        {
+            string accent;
+            string dim;
+            string selected;
+            string primary;
+            string primaryForeground;
+            string hover;
+            string pressed;
+
+            switch (Accent)
+            {
+                case AccentPreset.Pink:
+                    if (IsDark)
+                    {
+                        accent = "#F472B6"; dim = "#3A1426"; selected = "#A34E75";
+                        primary = "#F472B6"; primaryForeground = "#2A0714";
+                        hover = "#F9A8D4"; pressed = "#EC4899";
+                    }
+                    else
+                    {
+                        accent = "#DB2777"; dim = "#FCE7F3"; selected = "#F0A6C4";
+                        primary = "#DB2777"; primaryForeground = "#FFFFFF";
+                        hover = "#BE185D"; pressed = "#9D174D";
+                    }
+                    break;
+                case AccentPreset.Yellow:
+                    if (IsDark)
+                    {
+                        accent = "#FACC15"; dim = "#332B0A"; selected = "#96771A";
+                        primary = "#FACC15"; primaryForeground = "#221A00";
+                        hover = "#FDE047"; pressed = "#EAB308";
+                    }
+                    else
+                    {
+                        accent = "#B45309"; dim = "#FEF3C7"; selected = "#E7C16A";
+                        primary = "#B45309"; primaryForeground = "#FFFFFF";
+                        hover = "#92400E"; pressed = "#78350F";
+                    }
+                    break;
+                case AccentPreset.Blue:
+                    if (IsDark)
+                    {
+                        accent = "#60A5FA"; dim = "#132A4A"; selected = "#3B74B8";
+                        primary = "#60A5FA"; primaryForeground = "#06152A";
+                        hover = "#93C5FD"; pressed = "#3B82F6";
+                    }
+                    else
+                    {
+                        accent = "#2563EB"; dim = "#DBEAFE"; selected = "#93B4F5";
+                        primary = "#2563EB"; primaryForeground = "#FFFFFF";
+                        hover = "#1D4ED8"; pressed = "#1E3A8A";
+                    }
+                    break;
+                default:
+                    if (IsDark)
+                    {
+                        accent = "#4ADE80"; dim = "#173325"; selected = "#3F916A";
+                        primary = "#4ADE80"; primaryForeground = "#07130C";
+                        hover = "#6EE79A"; pressed = "#3CCB6F";
+                    }
+                    else
+                    {
+                        accent = "#16A34A"; dim = "#DCFCE7"; selected = "#8BCFA8";
+                        primary = "#16A34A"; primaryForeground = "#FFFFFF";
+                        hover = "#15803D"; pressed = "#166534";
+                    }
+                    break;
+            }
+
+            AddColor(d, "AccentBrush", accent);
+            AddColor(d, "AccentDimBrush", dim);
+            AddColor(d, "SwitchOnBrush", accent);
+            AddColor(d, "OptionSelectedBorderBrush", selected);
+            AddColor(d, "PrimaryButtonBgBrush", primary);
+            AddColor(d, "PrimaryButtonForegroundBrush", primaryForeground);
+            AddColor(d, "PrimaryButtonHoverBrush", hover);
+            AddColor(d, "PrimaryButtonPressedBrush", pressed);
+            AddAlpha(d, "RowSupportedBrush", IsDark ? (byte)28 : (byte)30, accent);
         }
 
         private static Dictionary<string, object> BuildDark()

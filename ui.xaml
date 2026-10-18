@@ -294,6 +294,7 @@
 
     <!-- Header -->
     <Grid Grid.Row="1" Margin="40,14,40,16">
+      <TextBlock Text="GearPower" FontSize="24" FontWeight="SemiBold" VerticalAlignment="Center"/>
       <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
         <Border Background="{DynamicResource TabBarBrush}" BorderBrush="{DynamicResource PanelBorderBrush}"
                 BorderThickness="1" CornerRadius="12" Padding="3">
@@ -376,6 +377,7 @@
               <RowDefinition Height="Auto"/>
               <RowDefinition Height="Auto"/>
               <RowDefinition Height="*"/>
+              <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Grid Grid.Row="0" Margin="20,16,20,10">
               <Grid.ColumnDefinitions>
@@ -417,6 +419,26 @@
             <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
               <StackPanel x:Name="InventoryPanel" Margin="12,0,10,12"/>
             </ScrollViewer>
+
+            <Border Grid.Row="3" Background="{DynamicResource GhostHoverBrush}"
+                    BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="0,1,0,0"
+                    Padding="18,11">
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*"/>
+                  <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                  <TextBlock Text="没有你想要的设备？" FontSize="11" FontWeight="SemiBold"/>
+                  <TextBlock Text="把型号和诊断信息发给我，我会继续适配。" FontSize="10"
+                             Foreground="{DynamicResource TextMutedBrush}" Margin="0,2,0,0"/>
+                </StackPanel>
+                <Button x:Name="DeviceRequestButton" Grid.Column="1" Style="{StaticResource GhostButton}"
+                        Content="提交给开发者" BorderBrush="{DynamicResource PanelBorderBrush}"
+                        BorderThickness="1" Padding="14,7" FontSize="10.5" VerticalAlignment="Center"
+                        ToolTip="在浏览器中打开 GitHub 新建 Issue"/>
+              </Grid>
+            </Border>
           </Grid>
         </Border>
 
@@ -441,6 +463,38 @@
                             Tag="Light" Padding="14,7" FontSize="11" Margin="6,0,0,0"/>
                     <Button x:Name="ThemeDarkOption" Style="{StaticResource GhostButton}" Content="深色"
                             Tag="Dark" Padding="14,7" FontSize="11" Margin="6,0,0,0"/>
+                  </WrapPanel>
+                  <TextBlock Text="强调色" FontSize="10.5" Foreground="{DynamicResource TextSecondaryBrush}"
+                             Margin="0,12,0,0"/>
+                  <WrapPanel Margin="0,7,0,0">
+                    <Button x:Name="AccentGreenOption" Style="{StaticResource GhostButton}" Padding="10,6"
+                            FontSize="10.5" Tag="Green">
+                      <StackPanel Orientation="Horizontal">
+                        <Border Width="10" Height="10" CornerRadius="5" Background="#22C55E" VerticalAlignment="Center"/>
+                        <TextBlock Text="绿色" Margin="6,0,0,0"/>
+                      </StackPanel>
+                    </Button>
+                    <Button x:Name="AccentPinkOption" Style="{StaticResource GhostButton}" Padding="10,6"
+                            FontSize="10.5" Tag="Pink" Margin="6,0,0,0">
+                      <StackPanel Orientation="Horizontal">
+                        <Border Width="10" Height="10" CornerRadius="5" Background="#EC4899" VerticalAlignment="Center"/>
+                        <TextBlock Text="粉色" Margin="6,0,0,0"/>
+                      </StackPanel>
+                    </Button>
+                    <Button x:Name="AccentYellowOption" Style="{StaticResource GhostButton}" Padding="10,6"
+                            FontSize="10.5" Tag="Yellow" Margin="6,0,0,0">
+                      <StackPanel Orientation="Horizontal">
+                        <Border Width="10" Height="10" CornerRadius="5" Background="#EAB308" VerticalAlignment="Center"/>
+                        <TextBlock Text="黄色" Margin="6,0,0,0"/>
+                      </StackPanel>
+                    </Button>
+                    <Button x:Name="AccentBlueOption" Style="{StaticResource GhostButton}" Padding="10,6"
+                            FontSize="10.5" Tag="Blue" Margin="6,0,0,0">
+                      <StackPanel Orientation="Horizontal">
+                        <Border Width="10" Height="10" CornerRadius="5" Background="#3B82F6" VerticalAlignment="Center"/>
+                        <TextBlock Text="蓝色" Margin="6,0,0,0"/>
+                      </StackPanel>
+                    </Button>
                   </WrapPanel>
                 </StackPanel>
               </Border>

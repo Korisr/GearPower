@@ -40,6 +40,7 @@ namespace GearPower
         private readonly StackPanel inventoryPanel;
         private readonly TextBlock inventoryCount;
         private readonly Button copyDiagButton;
+        private readonly Button deviceRequestButton;
         private readonly Button batteryTab;
         private readonly Button deviceTab;
         private readonly Button settingsTab;
@@ -48,6 +49,10 @@ namespace GearPower
         private readonly Button themeSystemOption;
         private readonly Button themeLightOption;
         private readonly Button themeDarkOption;
+        private readonly Button accentGreenOption;
+        private readonly Button accentPinkOption;
+        private readonly Button accentYellowOption;
+        private readonly Button accentBlueOption;
         private readonly Button refresh30Option;
         private readonly Button refresh60Option;
         private readonly Button refresh300Option;
@@ -126,6 +131,7 @@ namespace GearPower
             inventoryPanel = Find<StackPanel>("InventoryPanel");
             inventoryCount = Find<TextBlock>("InventoryCount");
             copyDiagButton = Find<Button>("CopyDiagButton");
+            deviceRequestButton = Find<Button>("DeviceRequestButton");
             batteryTab = Find<Button>("BatteryTab");
             deviceTab = Find<Button>("DeviceTab");
             settingsTab = Find<Button>("SettingsTab");
@@ -133,6 +139,10 @@ namespace GearPower
             themeSystemOption = Find<Button>("ThemeSystemOption");
             themeLightOption = Find<Button>("ThemeLightOption");
             themeDarkOption = Find<Button>("ThemeDarkOption");
+            accentGreenOption = Find<Button>("AccentGreenOption");
+            accentPinkOption = Find<Button>("AccentPinkOption");
+            accentYellowOption = Find<Button>("AccentYellowOption");
+            accentBlueOption = Find<Button>("AccentBlueOption");
             refresh30Option = Find<Button>("Refresh30Option");
             refresh60Option = Find<Button>("Refresh60Option");
             refresh300Option = Find<Button>("Refresh300Option");
@@ -181,6 +191,7 @@ namespace GearPower
             window.StateChanged += (s, e) => UpdateMaximizeGlyph();
             window.Closing += Window_Closing;
             copyDiagButton.Click += (s, e) => CopyDiagnostics();
+            deviceRequestButton.Click += (s, e) => OpenDeviceRequest();
             Find<Button>("SettingsLogButton").Click += (s, e) => OpenLog();
             Find<Button>("SettingsTrayHelpButton").Click += (s, e) => ShowTrayHelp();
             Find<Button>("SettingsFolderButton").Click += (s, e) => OpenExeFolder();
@@ -192,6 +203,10 @@ namespace GearPower
             themeSystemOption.Click += (s, e) => SetThemeMode(ThemeMode.System);
             themeLightOption.Click += (s, e) => SetThemeMode(ThemeMode.Light);
             themeDarkOption.Click += (s, e) => SetThemeMode(ThemeMode.Dark);
+            accentGreenOption.Click += (s, e) => SetAccentPreset(AccentPreset.Green);
+            accentPinkOption.Click += (s, e) => SetAccentPreset(AccentPreset.Pink);
+            accentYellowOption.Click += (s, e) => SetAccentPreset(AccentPreset.Yellow);
+            accentBlueOption.Click += (s, e) => SetAccentPreset(AccentPreset.Blue);
             refresh30Option.Click += (s, e) => SetRefreshSeconds(30);
             refresh60Option.Click += (s, e) => SetRefreshSeconds(60);
             refresh300Option.Click += (s, e) => SetRefreshSeconds(300);
@@ -599,6 +614,33 @@ namespace GearPower
                 mode == ThemeMode.Light ? "外观：浅色" : "外观：深色");
         }
 
+        private void SetAccentPreset(AccentPreset preset)
+        {
+            ThemeManager.SetAccent(preset);
+            RefreshSettingsState();
+            ShowToast("强调色：" + AccentLabel(preset));
+        }
+
+        private static string AccentLabel(AccentPreset preset)
+        {
+            switch (preset)
+            {
+                case AccentPreset.Pink: return "粉色";
+                case AccentPreset.Yellow: return "黄色";
+                case AccentPreset.Blue: return "蓝色";
+                default: return "绿色";
+            }
+        }
+
+        private static void SetAccentOptionState(Button button, bool active)
+        {
+            button.Background = active ? Theme.AccentDim : Theme.GhostHover;
+            button.Foreground = active ? Theme.Accent : Theme.Secondary;
+            button.BorderBrush = active ? Theme.Accent : Theme.OptionBorder;
+            button.BorderThickness = new Thickness(1);
+            button.FontWeight = active ? FontWeights.SemiBold : FontWeights.Normal;
+        }
+
         private void UpdateThemeDots()
         {
             summaryDot.Fill = SummaryDotBrush();
@@ -811,6 +853,10 @@ namespace GearPower
             SetOptionState(themeSystemOption, ThemeManager.Mode == ThemeMode.System);
             SetOptionState(themeLightOption, ThemeManager.Mode == ThemeMode.Light);
             SetOptionState(themeDarkOption, ThemeManager.Mode == ThemeMode.Dark);
+            SetAccentOptionState(accentGreenOption, ThemeManager.Accent == AccentPreset.Green);
+            SetAccentOptionState(accentPinkOption, ThemeManager.Accent == AccentPreset.Pink);
+            SetAccentOptionState(accentYellowOption, ThemeManager.Accent == AccentPreset.Yellow);
+            SetAccentOptionState(accentBlueOption, ThemeManager.Accent == AccentPreset.Blue);
             SetOptionState(refresh30Option, refreshSeconds == 30);
             SetOptionState(refresh60Option, refreshSeconds == 60);
             SetOptionState(refresh300Option, refreshSeconds == 300);
@@ -1588,8 +1634,25 @@ namespace GearPower
             CopyText(sb.ToString(), "诊断信息已复制，可发给开发者适配新设备");
         }
 
-        private void CopyText(string text, string message)
+        private void OpenDeviceRequest()
         {
+            const string url = "https://github.com/XAVIER0229/GearPower/issues/new?title=%5BDevice%5D%20";
+            try
+            {
+                var info = new ProcessStartInfo();
+                info.FileName = url;
+                info.UseShellExecute = true;
+                Process.Start(info);
+                ShowToast("已打开设备支持表单，请附上诊断信息");
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Open device request failed: " + ex.Message);
+                ShowToast("无法打开浏览器，请手动访问 GitHub Issues");
+            }
+        }
+
+        private void CopyText(string text, string message)        {
             try
             {
                 Clipboard.SetText(text ?? "");
