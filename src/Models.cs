@@ -168,6 +168,8 @@ namespace GearPower
             Add(m, 0x1D57, 0xFA61, "Attack Shark X3", DeviceKind.Mouse, false);
             Add(m, 0x5253, 0x1020, "MCHOSE L7 Pro", DeviceKind.Mouse, true);
             Add(m, 0x5253, 0x00B0, "MCHOSE L7 Pro", DeviceKind.Mouse, false);
+            Add(m, 0x3837, 0x1001, "MCHOSE K7 Ultra", DeviceKind.Mouse, true);
+            Add(m, 0x3837, 0x4150, "MCHOSE K7 Ultra", DeviceKind.Mouse, false);
             Add(m, 0x1956, 0x3069, "Bloody SG5 Pro", DeviceKind.Mouse, true);
             Add(m, 0x1956, 0x3144, "Bloody SG5 Pro", DeviceKind.Mouse, false);
 
@@ -244,6 +246,7 @@ namespace GearPower
                 case 0x046D: return "Logitech 罗技";
                 case 0x1D57: return "Attack Shark";
                 case 0x5253: return "MCHOSE";
+                case 0x3837: return "MCHOSE";
                 case 0x1956: return "A4Tech Bloody";
                 default: return "未知厂商";
             }

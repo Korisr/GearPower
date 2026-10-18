@@ -102,6 +102,7 @@ Windows 10/11 · .NET Framework 4.8 · 单文件 · 本地读取，不联网
 | 兰族 Lamzu Maya X / Inca | HID 特性报告 `0x83` | **已实机验证**（Maya X 8K Dongle，31%） |
 | ATK / VXE / VGN / 达尔优 / G-Wolves 等 Compx 方案 | Nordic 52（17 字节）/ Nordic 54（64 字节） | **ATK Zero 已实机验证**（Nordic 54，100%）；其他型号按协议实现 |
 | ATK Horizon | 有线耳机，无电池 | 只在设备清单显示，不生成电量卡片 |
+| 迈从 MCHOSE K7 Ultra / L7 Pro | Realtek `0xFF01`，报告 `0x11/0x13`，`0xE2` 电量事件 | 协议已实现，待对应型号实机验证 |
 | Razer 雷蛇无线鼠标 | 90 字节特性报告，命令类 `0x02/0x07` | 按 OpenRazer 公开协议实现 |
 | ASUS ROG 鼠标 / 耳机 | 特性报告 `0x12 0x07`，电量在第 5 字节 | 按 G-Helper 公开协议实现；Omni 接收器多设备暂未完全覆盖 |
 | HyperX Cloud Flight / Flight S | 20 字节输出报告 `21 FF 05`（另有 64 字节回退） | **已实机验证**（Cloud Flight Wireless，60%） |
@@ -112,6 +113,8 @@ Windows 10/11 · .NET Framework 4.8 · 单文件 · 本地读取，不联网
 | 蓝牙耳机 / 鼠标 | Windows 蓝牙电量属性 | 取决于系统是否暴露该属性 |
 
 > ATK Zero、HyperX Cloud Flight 与 Lamzu 已实机验证；ATK Horizon 是有线耳机，不参与电量读取；其余协议来自公开开源项目的字段/命令说明，但手头没有对应型号逐一实机验证。若你的设备读数不对，请把「设备清单」里的诊断信息发给我，我可以按真实报告继续适配。
+>
+> MCHOSE 使用 Realtek 方案时，电量由 `0x13` 输入报告里的 `0xE2` 状态事件提供；程序会先监听已有事件，必要时发送 `0x0B 0xAA` 触发一次 EEPROM 配置重载。这一步不会写入新设置，但可能让设备重新加载当前配置。其他 MCHOSE 型号或不同固件如果接口不是 `0xFF01`，需要单独适配。
 >
 > HyperX 官方软件只显示 High / Mid / Low 是它的界面选择；耳机原始电量包实际给出更细的档位（约 5–15% 一档），本程序把它换算成百分比。若你更希望只显示「高/中/低」，也可以改成三档显示。
 

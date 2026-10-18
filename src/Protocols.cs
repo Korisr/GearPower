@@ -81,6 +81,7 @@ namespace GearPower
             new AsusProtocol(),
             new RazerProtocol(),
             new AtkProtocol(),
+            new MchoseProtocol(),
             new LamzuProtocol(),
             new HyperXProtocol(),
             new LogitechProtocol(),
@@ -470,6 +471,153 @@ namespace GearPower
             if (group.Known != null && group.Known.Wireless)
                 return Result(null, false, false, true, Name, "接收器在线，设备未唤醒");
             return null;
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // MCHOSE (迈从) Realtek family, e.g. K7 Ultra (3837:1001 / 3837:4150)
+    // and L7 Pro (5253:1020 / 5253:00B0).
+    //
+    // Config channel: Usage Page 0xFF01. Report 0x11 carries XOR-encoded
+    // commands; report 0x13 pushes an 0xE2 status event with charge state,
+    // exact battery percentage, polling rate and device name.
+    //
+    // The official tool triggers E2 by sending 0x0B 0xAA (reload config
+    // from EEPROM). This does not write new settings, but it does reload
+    // the current profile from EEPROM. We first listen for a pending E2
+    // and only send the reload when needed.
+    // ---------------------------------------------------------------------
+    public sealed class MchoseProtocol : HidProtocol
+    {
+        private const byte ReportCommand = 0x11;
+        private const byte ReportInput = 0x13;
+        private const byte PushStatus = 0xE2;
+        private const byte CmdProfileReload = 0x0B;
+        private const byte ReloadSub = 0xAA;
+        private static readonly ushort[] VendorIds = new ushort[] { 0x3837, 0x5253 };
+
+        public override string Name
+        {
+            get { return "MCHOSE 2.4G"; }
+        }
+
+        public override bool Matches(DeviceGroup group)
+        {
+            return VendorIds.Contains(group.Vid) && group.Interfaces.Any(i => i.UsagePage == 0xFF01);
+        }
+
+        public override ProbeResult Probe(DeviceGroup group)
+        {
+            HidInterfaceInfo iface = group.Interfaces
+                .Where(i => i.UsagePage == 0xFF01)
+                .OrderByDescending(i => i.InputLength >= 20)
+                .FirstOrDefault();
+            if (iface == null) return null;
+            Log.Debug("MCHOSE interface " + iface.UsageText + " IN=" + iface.InputLength +
+                      " OUT=" + iface.OutputLength);
+
+            string error;
+            using (HidHandle handle = HidHandle.Open(iface.Path, true, out error))
+            {
+                if (handle == null)
+                {
+                    Log.Debug("MCHOSE open failed: " + error);
+                    return null;
+                }
+
+                int readLength = Math.Max(21, iface.InputLength);
+                ProbeResult pending = ReadStatus(handle, group, readLength, 2, 180);
+                if (pending != null) return pending;
+
+                byte[] packet = BuildBatteryRequest(iface.OutputLength);
+                bool sent = handle.Write(packet, 700);
+                if (!sent) sent = handle.SetOutputReport(packet);
+                if (!sent) sent = handle.SetFeature(packet);
+                if (!sent)
+                {
+                    Log.Debug("MCHOSE write failed on " + iface.UsageText);
+                    return null;
+                }
+
+                Thread.Sleep(40);
+                ProbeResult status = ReadStatus(handle, group, readLength, 12, 250);
+                if (status != null) return status;
+
+                Log.Debug("MCHOSE no status event on " + iface.UsageText);
+                if (group.Known != null && group.Known.Wireless)
+                    return Result(null, false, false, true, Name, "接收器在线，设备未唤醒");
+                return null;
+            }
+        }
+
+        internal static byte[] BuildBatteryRequest(int outputLength)
+        {
+            // Report 0x11 is 20 payload bytes plus the report ID. The
+            // interface's OutputReportByteLength may be the larger 0x12
+            // report (64 bytes), so do not blindly use it.
+            int length = outputLength >= 3 && outputLength <= 21 ? outputLength : 21;
+            var packet = new byte[length];
+            packet[0] = ReportCommand;
+            for (int i = 1; i < packet.Length; i++) packet[i] = 0xFF;
+            packet[1] = (byte)(CmdProfileReload ^ 0xFF);
+            if (packet.Length > 2) packet[2] = (byte)(ReloadSub ^ 0xFF);
+            return packet;
+        }
+
+        internal static ProbeResult ParseStatus(byte[] buffer, DeviceGroup group)
+        {
+            if (buffer == null || buffer.Length < 3) return null;
+            int offset = buffer[0] == ReportInput ? 1 : buffer[0] == PushStatus ? 0 : -1;
+            if (offset < 0) return null;
+
+            int length = buffer.Length - offset;
+            if (length < 17) return null;
+            var data = new byte[length];
+            for (int i = 0; i < length; i++) data[i] = (byte)(buffer[offset + i] ^ 0xFF);
+            if (data[0] != PushStatus) return null;
+
+            int percent = data[4];
+            bool charging = data[3] != 0;
+            string name = ReadName(data);
+            if (percent < 1 || percent > 100)
+            {
+                if (data[9] == 0 && data[6] == 0)
+                    return Result(null, false, false, true, "MCHOSE 2.4G", "设备休眠");
+                return null;
+            }
+            if (data[9] == 0 && data[6] == 0)
+                return Result(null, false, false, true, "MCHOSE 2.4G", "设备休眠");
+            if (data[9] == 0) return null;
+
+            ProbeResult result = Result(percent, charging, percent >= 100, false,
+                "MCHOSE 2.4G", "2.4G 接收器");
+            result.ModelName = group != null && group.Known != null
+                ? group.Known.Name
+                : (string.IsNullOrEmpty(name) ? (group != null ? group.Name : "MCHOSE") : name);
+            return result;
+        }
+
+        private static ProbeResult ReadStatus(HidHandle handle, DeviceGroup group, int length, int attempts, int timeoutMs)
+        {
+            for (int i = 0; i < attempts; i++)
+            {
+                byte[] response = handle.Read(length, timeoutMs);
+                ProbeResult parsed = ParseStatus(response, group);
+                if (parsed != null) return parsed;
+            }
+            return null;
+        }
+
+        private static string ReadName(byte[] data)
+        {
+            var chars = new List<char>();
+            for (int i = 9; i < Math.Min(17, data.Length); i++)
+            {
+                byte b = data[i];
+                if (b == 0) break;
+                if (b >= 0x20 && b <= 0x7E) chars.Add((char)b);
+            }
+            return new string(chars.ToArray()).Trim();
         }
     }
 

@@ -12,6 +12,7 @@ command layouts and public reverse-engineering notes were used as references.
 | [LennardKittner/HyperHeadset](https://github.com/LennardKittner/HyperHeadset) | MIT | HyperX Cloud III and Cloud Flight 64-byte fallback battery packets |
 | [hux0192/HyperX-Battery](https://github.com/hux0192/HyperX-Battery) | MIT (see LICENSE.txt) | HyperX Cloud Flight 20-byte `21 FF 05` battery packet |
 | [csmith/alphabat](https://github.com/csmith/alphabat) | MIT | HyperX Cloud Alpha Wireless `21 BB 0B` query |
+| [vibecode / Mchose-cli](https://gitlab.com/unk9201422/Mchose) | GPL-2.0 | MCHOSE K7 Ultra Realtek `0xFF01` report `0x11/0x13` and `0xE2` battery/status layout |
 | [Linux kernel HID HyperX patch](https://lkml.iu.edu/hypermail/linux/kernel/2606.3/06496.html) | GPL-2.0 | HyperX Cloud III `0x66` commands and response layout |
 | [Microsoft HID documentation](https://learn.microsoft.com/windows-hardware/drivers/hid/) | Microsoft docs license | HID capabilities, value caps, IOCTL usage |
 

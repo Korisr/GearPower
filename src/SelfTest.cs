@@ -78,6 +78,26 @@ namespace GearPower
                 bool answered;
                 check("nordic54 battery = 100%", Nordic54Protocol.ParseBattery(nordic54Reply, out answered) == 100 && answered);
 
+                byte[] mchoseRequest = MchoseProtocol.BuildBatteryRequest(21);
+                check("mchose request header", mchoseRequest.Length == 21 &&
+                    mchoseRequest[0] == 0x11 && mchoseRequest[1] == 0xF4 && mchoseRequest[2] == 0x55);
+                check("mchose caps 0x12 output to 0x11 size", MchoseProtocol.BuildBatteryRequest(64).Length == 21);
+                byte[] mchosePayload = new byte[20];
+                mchosePayload[0] = 0xE2;
+                mchosePayload[1] = 0x01;
+                mchosePayload[2] = 0x01;
+                mchosePayload[3] = 0x00;
+                mchosePayload[4] = 76;
+                mchosePayload[6] = 0x02;
+                byte[] mchoseName = Encoding.ASCII.GetBytes("K7 Ultra");
+                Buffer.BlockCopy(mchoseName, 0, mchosePayload, 9, mchoseName.Length);
+                byte[] mchosePacket = new byte[21];
+                mchosePacket[0] = 0x13;
+                for (int i = 0; i < 20; i++) mchosePacket[i + 1] = (byte)(mchosePayload[i] ^ 0xFF);
+                ProbeResult mchose = MchoseProtocol.ParseStatus(mchosePacket, null);
+                check("mchose battery = 76%", mchose != null && mchose.Percent == 76 && !mchose.Charging);
+                check("mchose device name", mchose != null && mchose.ModelName == "K7 Ultra");
+
                 byte[] lamzu = new byte[9];
                 lamzu[1] = 0xA1;
                 lamzu[6] = 0x83;
