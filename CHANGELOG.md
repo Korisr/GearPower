@@ -5,6 +5,7 @@
 ### Features
 
 - 实验性支持 MCHOSE（迈从）Realtek 方案：K7 Ultra / L7 Pro，读取 `0xE2` 电量状态事件
+- MCHOSE K7 Ultra 已实机验证（2.4G，83%）
 
 ## [1.0.2] - 2026-10-18
 
