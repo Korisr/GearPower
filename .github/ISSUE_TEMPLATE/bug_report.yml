@@ -1,0 +1,54 @@
+name: Bug report
+description: 报告崩溃、界面问题或电量读数错误
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈。请尽量附上诊断信息；发布前请删除设备序列号、唯一 ID 等个人信息。
+  - type: input
+    id: windows
+    attributes:
+      label: Windows 版本
+      placeholder: "例如 Windows 11 23H2 22631.4169"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: GearPower 版本
+      description: Release 版本号或提交 SHA
+      placeholder: "v1.0.0 / commit abc1234"
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: 设备型号与连接方式
+      placeholder: "例如 ATK Zero，2.4G 接收器；HyperX Cloud Flight，2.4G"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. 打开 GearPower
+        2. 点击 ...
+        3. 出现 ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望结果与实际结果
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: 诊断信息 / 日志
+      description: 可粘贴「复制诊断信息」内容，或附上 logs/app.log（请先删除序列号等隐私字段）
+      render: text
+    validations:
+      required: false

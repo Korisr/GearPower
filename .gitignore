@@ -1,0 +1,26 @@
+# Build output
+dist/
+bin/
+obj/
+*.exe
+*.pdb
+*.dll
+
+# Runtime artifacts
+logs/
+*.log
+hid-dump.txt
+battery-cache.tsv
+device-colors.tsv
+selftest.log
+build-selftest.log
+
+# IDE / local settings
+.vs/
+.vscode/
+*.user
+*.suo
+
+# OS
+Thumbs.db
+Desktop.ini

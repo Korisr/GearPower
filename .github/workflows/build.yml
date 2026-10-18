@@ -1,0 +1,36 @@
+name: build
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ "v*" ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build and self-test
+        shell: pwsh
+        run: .\build.ps1
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: GearPower-windows
+          path: |
+            dist/GearPower.exe
+            dist/README.md
+            dist/LICENSE
+            dist/THIRD_PARTY_NOTICES.md
+            dist/CONTRIBUTING.md
+            dist/SECURITY.md
+            dist/CHANGELOG.md
+          if-no-files-found: error

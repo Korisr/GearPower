@@ -1,0 +1,71 @@
+param(
+    [switch]$Run,
+    [switch]$SkipTest
+)
+
+$ErrorActionPreference = "Stop"
+$root = Split-Path -Parent $MyInvocation.MyCommand.Path
+$csc = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+$wpf = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\WPF"
+$dist = Join-Path $root "dist"
+
+if (-not (Test-Path $csc)) {
+    throw "Cannot find the .NET Framework compiler: $csc"
+}
+if (-not (Test-Path (Join-Path $wpf "PresentationFramework.dll"))) {
+    throw "Cannot find WPF reference assemblies: $wpf"
+}
+
+New-Item -ItemType Directory -Force -Path $dist | Out-Null
+
+$sources = Get-ChildItem (Join-Path $root "src") -Filter "*.cs" | Sort-Object Name | ForEach-Object { $_.FullName }
+if ($sources.Count -eq 0) { throw "No .cs files found under src" }
+
+$arguments = @(
+    "/nologo",
+    "/target:winexe",
+    "/platform:anycpu",
+    "/langversion:5",
+    "/out:$dist\GearPower.exe",
+    "/resource:$root\ui.xaml,ui.xaml",
+    "/resource:$root\assets\logo.png,assets/logo.png",
+    "/win32icon:$root\assets\app.ico",
+    "/win32manifest:$root\app.manifest",
+    "/r:$wpf\PresentationFramework.dll",
+    "/r:$wpf\PresentationCore.dll",
+    "/r:$wpf\WindowsBase.dll",
+    "/r:C:\Windows\Microsoft.NET\Framework64\v4.0.30319\System.Xaml.dll",
+    "/r:C:\Windows\Microsoft.NET\Framework64\v4.0.30319\System.Windows.Forms.dll",
+    "/r:C:\Windows\Microsoft.NET\Framework64\v4.0.30319\System.Drawing.dll",
+    "/r:System.dll",
+    "/r:System.Core.dll"
+) + $sources
+
+Write-Host "Compiling GearPower..." -ForegroundColor Cyan
+& $csc $arguments
+if ($LASTEXITCODE -ne 0) { throw "Compilation failed (exit $LASTEXITCODE)" }
+
+Copy-Item (Join-Path $root "README.md") $dist -Force
+Copy-Item (Join-Path $root "THIRD_PARTY_NOTICES.md") $dist -Force
+Copy-Item (Join-Path $root "LICENSE") $dist -Force
+Copy-Item (Join-Path $root "CONTRIBUTING.md") $dist -Force
+Copy-Item (Join-Path $root "SECURITY.md") $dist -Force
+Copy-Item (Join-Path $root "CHANGELOG.md") $dist -Force
+$assetTarget = Join-Path $dist "assets"
+New-Item -ItemType Directory -Force -Path $assetTarget | Out-Null
+Get-ChildItem (Join-Path $root "assets") -Filter "*.png" | Copy-Item -Destination $assetTarget -Force
+
+if (-not $SkipTest) {
+    Write-Host "Running self-test..." -ForegroundColor Cyan
+    $process = Start-Process -FilePath (Join-Path $dist "GearPower.exe") -ArgumentList "--selftest" -Wait -PassThru
+    if ($process.ExitCode -ne 0) {
+        throw "Self-test failed. See dist\selftest.log"
+    }
+    Copy-Item (Join-Path $dist "selftest.log") (Join-Path $dist "build-selftest.log") -Force
+    Write-Host "Self-test passed." -ForegroundColor Green
+}
+
+Write-Host "Output: $dist\GearPower.exe" -ForegroundColor Green
+if ($Run) {
+    Start-Process -FilePath (Join-Path $dist "GearPower.exe")
+}

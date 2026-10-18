@@ -1,0 +1,267 @@
+# GearPower
+
+<img src="assets/logo.png" width="96" alt="GearPower logo">
+
+Windows 上的无线外设电量面板。插好 2.4G 接收器、打开设备，就能一眼看到鼠标、耳机、键盘还剩多少电。
+
+Windows 10/11 · .NET Framework 4.8 · 单文件 · 本地读取，不联网
+
+[![build](https://github.com/XAVIER0229/GearPower/actions/workflows/build.yml/badge.svg)](https://github.com/XAVIER0229/GearPower/actions/workflows/build.yml)
+
+![主界面](assets/screenshot-main.png)
+
+> 实机测试：在本机读到 **ATK Zero（Nordic 54 协议）100%**、**HyperX Cloud Flight Wireless 60%** 和 **Lamzu Maya X 8K Dongle 31%**；接收器在线但设备休眠时，会显示「设备休眠」而不是直接消失。
+
+## 功能
+
+- **自动识别**：扫描 HID 总线，按 VID/PID、用途页和厂商协议识别鼠标、耳机、键盘等设备。
+- **电量卡片**：环形电量、百分比、充电/休眠/低电量状态，低电量红色提醒。
+- **接收器在线也能看到设备**：设备关机或休眠时保留卡片，显示「设备休眠」，唤醒后刷新即可。
+- **休眠保留上次电量**：设备进入休眠后会继续显示最后一次成功读取的电量和时间，并用淡色环 +「上次读数」标注；缓存保留 30 天。
+- **设备清单**：列出所有 HID 接口的 VID/PID、用途页、接口号、报告长度与字段；点击任意一行可复制该设备的诊断信息。
+- **自动刷新**：30 秒 / 60 秒 / 5 分钟 / 关闭，在「设置」页调整，保存在注册表。
+- **浅色 / 深色 / 跟随系统**：在「设置 → 外观」切换，跟随系统时会在 Windows 切换白天/黑夜后自动更新。
+- **托盘后台**：关闭窗口后继续在系统托盘运行；托盘图标是 **iPhone 风格电池**，不带外圈底色，只用电池轮廓和填充比例显示电量最低的设备。
+- **低电量配色**：电池填充按电量变色——绿色正常、橙色偏低、红色低电量；所有设备仍在悬停卡片和右键菜单中列出。
+- **纯本地**：不联网、不上传，只读取 HID 报告和 Windows 设备属性。
+
+## 下载
+
+从 [Releases](../../releases/latest) 下载最新的 `GearPower.exe`，双击运行，无需安装。
+
+> 仓库不提交 `dist/` 和生成的 exe，构建产物由 GitHub Actions 或本地 `build.ps1` 生成。
+> exe 未做代码签名，SmartScreen 可能提示未知发布者；可核对 Release 中的 SHA256，或按「构建」一节自行编译。
+
+## 快速开始
+
+1. 运行 `GearPower.exe`（单文件，无需安装）。
+2. 插好 2.4G 接收器，打开鼠标/耳机电源。
+3. 等待约 1 秒自动扫描；按 **F5** 或点右上角刷新。
+4. 读不到时，切到「设备清单」，点「复制诊断信息」。
+
+系统要求：Windows 10 / 11（64 位），.NET Framework 4.8（Windows 10 1903+ 与 Windows 11 自带）。
+
+> 从旧版升级时，GearPower 会自动读取旧设置和 `%LOCALAPPDATA%` 下的旧电量缓存，并写入新的 GearPower 路径；旧文件不会自动删除，确认无误后可手动清理。
+
+## 设置
+
+顶部「设置」页集中管理外观、刷新、托盘和工具，主界面只保留「电量 / 设备清单 / 设置」三个页签和刷新按钮：
+
+![设置页](assets/screenshot-settings.png)
+
+- **外观**：跟随系统 / 浅色 / 深色，保存到 `HKCU\Software\GearPower\ThemeMode`。
+- **自动刷新**：30 秒 / 60 秒 / 5 分钟 / 关闭。
+- **系统托盘**：显示托盘图标、悬停电量卡片；这两个开关和任务栏电量条、高对比度都使用 iPhone 风格拨动开关。
+- **关闭窗口时**：每次询问 / 关闭到托盘 / 直接退出；询问弹窗可勾选「记住我的选择」，并同步回设置页。
+- **任务栏电量条**：实验性功能，开关打开后自动工作。徽标居中且左侧有空间时，在空白区显示少量设备电量；徽标靠左、全屏或空间不足时自动隐藏。
+- **高对比度状态栏**：默认使用深色圆角条、白色设备名和高亮电量，浅色/深色任务栏都清楚；可以在设置里关闭，关闭后跟随应用主题。
+- **任务栏状态颜色**：正常 / 偏低 / 过低三档颜色可以单独修改，只影响任务栏电量条，不改变托盘电池图标。
+
+![任务栏电量条](assets/screenshot-taskbar.png)
+
+任务栏条是独立的置顶、点击穿透窗口，不注入 Explorer，也不是真正的任务栏子窗口；因此窗口布局变化时会在 3 秒内自动跟随。徽标靠左时目前采用安全隐藏，不覆盖应用按钮；后续可以用更可靠的任务栏按钮边界实现右侧放置。
+- **工具**：打开文件夹、打开日志、托盘帮助、以管理员身份重启、退出程序。
+
+![浅色主题](assets/screenshot-light.png)
+
+![深色主题](assets/screenshot-dark.png)
+
+## 托盘与后台
+
+开启托盘后，关闭主窗口程序不会退出，而是留在系统托盘继续刷新：
+
+- 托盘图标只显示**电量最低的那台设备**：圆角电池外壳 + 电量填充，类似 iPhone 状态栏，**不再画外圈背景**。
+- 电池本体已放大到约 76% 宽、52% 高，减少 16px 托盘里的上下留白，同时保留横向电池比例。
+- 填充颜色随电量变化：**> 40% 绿色**、**21–40% 橙色**、**≤ 20% 红色**；设备休眠时颜色变淡，并保留上次电量。
+- 轮廓颜色跟随任务栏明暗自动切换：深色任务栏用白边，浅色任务栏用深色边。
+- 16px（100% 缩放）下电池内不塞数字，避免糊成一团；精确数值看悬停卡片或右键菜单。24/32px（150%–200% 缩放）时会在电池内显示百分比。
+- 悬停提示和右键菜单会列出全部设备，并标出最低电量那一台。
+- 托盘图标右键菜单：设备电量列表、打开主界面、立即刷新、退出。
+- 双击托盘图标重新打开主界面；「设置 → 工具 → 退出程序」可完全退出。
+
+![iPhone 风格托盘电池](assets/tray-preview.png)
+
+> 预览图为放大效果；实际 16px 图标只显示电池条，百分比数字在 150% 以上缩放时才出现。
+
+右键托盘不再使用 Windows 默认菜单，而是同风格的自绘卡片菜单：
+
+![托盘右键菜单](assets/screenshot-tray-menu.png)
+
+鼠标在托盘图标上停留约 0.5 秒，会显示自绘悬浮卡片，列出全部设备、状态和电量；移开或点击后自动消失。
+
+> **打开软件后没看到托盘图标？** Windows 11 默认会把新托盘图标放进任务栏的 `^` 溢出区。点击 `^`，找到 GearPower 的电池图标，把它拖到任务栏即可常驻。也可以在「设置 → 个性化 → 任务栏 → 其他系统托盘图标」中打开 GearPower。主界面底部显示「托盘后台」就表示功能已启用。
+>
+> 如果程序是被沙箱、自动化工具或某些启动器以**低权限（Low Integrity）**启动的，Windows 会直接拒绝托盘图标注册。日志里会看到 `Process integrity: Low`，主界面底部会显示「低权限运行 · 托盘不可用」。启动时会弹窗提示，点击「以管理员身份重启」即可通过 UAC 以高权限重新启动；也可以稍后在「设置 → 工具 → 以管理员身份重启」中操作。取消 UAC 后会继续以低权限运行，此时关闭窗口会直接退出。
+
+
+## 支持情况
+
+| 设备 / 系列 | 读取方式 | 状态 |
+| --- | --- | --- |
+| 兰族 Lamzu Maya X / Inca | HID 特性报告 `0x83` | **已实机验证**（Maya X 8K Dongle，31%） |
+| ATK / VXE / VGN / 达尔优 / G-Wolves 等 Compx 方案 | Nordic 52（17 字节）/ Nordic 54（64 字节） | **ATK Zero 已实机验证**（Nordic 54，100%）；其他型号按协议实现 |
+| ATK Horizon | 有线耳机，无电池 | 只在设备清单显示，不生成电量卡片 |
+| Razer 雷蛇无线鼠标 | 90 字节特性报告，命令类 `0x02/0x07` | 按 OpenRazer 公开协议实现 |
+| ASUS ROG 鼠标 / 耳机 | 特性报告 `0x12 0x07`，电量在第 5 字节 | 按 G-Helper 公开协议实现；Omni 接收器多设备暂未完全覆盖 |
+| HyperX Cloud Flight / Flight S | 20 字节输出报告 `21 FF 05`（另有 64 字节回退） | **已实机验证**（Cloud Flight Wireless，60%） |
+| HyperX Cloud III Wireless | 62 字节输出报告 `0x66` | 按 Linux 内核 HID 驱动实现 |
+| HyperX Cloud Alpha Wireless | 输出报告 `21 BB 0B` | 按 alphabat 协议实现 |
+| Logitech 罗技 Lightspeed / Bolt / Unifying | HID++ 2.0，`UnifiedBattery 0x1004` | 额外支持 |
+| 通用 HID 设备 | Usage Page `0x06` / Usage `0x20`（Battery Strength） | 通用兜底 |
+| 蓝牙耳机 / 鼠标 | Windows 蓝牙电量属性 | 取决于系统是否暴露该属性 |
+
+> ATK Zero、HyperX Cloud Flight 与 Lamzu 已实机验证；ATK Horizon 是有线耳机，不参与电量读取；其余协议来自公开开源项目的字段/命令说明，但手头没有对应型号逐一实机验证。若你的设备读数不对，请把「设备清单」里的诊断信息发给我，我可以按真实报告继续适配。
+>
+> HyperX 官方软件只显示 High / Mid / Low 是它的界面选择；耳机原始电量包实际给出更细的档位（约 5–15% 一档），本程序把它换算成百分比。若你更希望只显示「高/中/低」，也可以改成三档显示。
+
+## 已知限制
+
+- 任务栏电量条是实验性 Overlay，只在 Windows 11 徽标居中且左侧有空间时显示；徽标靠左、全屏或空间不足时会自动隐藏。
+- 不同厂商、接收器固件和地区版本可能使用不同 HID 报告；表中未实机验证的型号可能需要继续适配。
+- 蓝牙设备是否暴露电量取决于 Windows 蓝牙栈和耳机固件，不能保证所有型号可读。
+- exe 未签名，Windows SmartScreen 可能提示未知发布者。
+- 主窗口最小尺寸为 980 × 620，低于该尺寸会限制继续缩小，避免布局被裁切。
+
+## 使用说明
+
+- **自动刷新**：在「设置 → 自动刷新」中选择 30 秒 / 60 秒 / 5 分钟 / 关闭。
+- **设备休眠**：2.4G 接收器一直在线，但鼠标/耳机关机或休眠时不会返回电量。动一下鼠标、按一下耳机电源，再刷新。
+- **上次电量缓存**：读到电量后写入 `battery-cache.tsv`（优先 `%LOCALAPPDATA%\GearPower`，不可写时放在 exe 同目录）。设备休眠时显示最后一次读数和时间；删除该文件即可清空记录。
+- **设备清单**：40 个 HID 接口会全部列出，包括键盘、灯控、麦克风等。只有带电量协议的设备才会生成卡片。
+- **日志**：`logs\app.log`（exe 同目录；若目录不可写则退到 `%LOCALAPPDATA%\GearPower`）。
+- **与厂商软件冲突**：Razer Synapse、Armoury Crate、NGENUITY、ATK HUB 等可能占用设备。若一直读不到，先退出厂商软件再试；本软件只发送读取电量的查询，不修改任何设置。
+
+## 常见问题
+
+**读不到电量？**
+
+1. 确认接收器插在 USB 数据口，设备已开机。
+2. 动一下鼠标 / 按耳机电源键唤醒，按 F5。
+3. 退出厂商驱动软件后重试。
+4. 到「设备清单」确认设备是否出现；点「复制诊断信息」发给开发者。
+
+**为什么蓝牙耳机没有电量？**
+
+经典蓝牙耳机是否暴露电量取决于 Windows 蓝牙栈和耳机固件。很多耳机只在手机 App 或厂商驱动里显示电量；使用 2.4G 接收器的版本通常更可靠。
+
+**SmartScreen / 杀毒软件提示？**
+
+exe 未签名，可能触发 SmartScreen。点「更多信息 → 仍要运行」，或按下面的步骤自行编译。
+
+**会修改设备设置吗？**
+
+不会。只发送电量查询/读取报告，不写 DPI、灯效、EQ 等设置。
+
+## 诊断与开发参数
+
+```text
+GearPower.exe                 正常启动
+GearPower.exe --demo          用示例数据预览界面（不访问硬件）
+GearPower.exe --demo --dark   以深色主题预览（--light 为浅色）
+GearPower.exe --selftest      运行协议解析自检，写 selftest.log
+GearPower.exe --dump          生成 hid-dump.txt（所有 HID 接口/字段）
+GearPower.exe --tray-preview  生成托盘电池预览图
+```
+
+`--dump` 适合排查新设备：把 `hid-dump.txt` 或界面里复制的诊断信息发出来即可。
+
+> `hid-dump.txt`、`logs/app.log` 和「复制诊断信息」可能包含设备名称、VID/PID 或接口路径中的唯一 ID；公开发布前请先删除序列号等敏感字段。
+
+## 构建
+
+当前版本：**1.0.0**。需要 Windows 10/11 自带的 .NET Framework 4.8 与 `csc.exe`（无需 Visual Studio / .NET SDK）。
+
+```powershell
+git clone https://github.com/XAVIER0229/GearPower.git
+cd GearPower
+powershell -ExecutionPolicy Bypass -File .\build.ps1
+# 输出 dist\GearPower.exe，并自动跑一遍自检
+```
+
+只编译、不跑自检：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\build.ps1 -SkipTest
+```
+
+仓库包含 GitHub Actions 工作流 `.github/workflows/build.yml`，推送到 `main` 或打 `v*` 标签时会在 `windows-latest` 上构建并上传 exe artifact。
+
+源码结构：
+
+```text
+src/
+  Program.cs        入口、单文件资源加载
+  Native.cs         SetupAPI / HID / DWM 互操作
+  Descriptor.cs     HID 报告描述符解析（自检与诊断）
+  Protocols.cs      各厂商电量协议
+  Scanner.cs        设备分组、探测、设备清单
+  MainWindow.cs     WPF 界面逻辑、自绘标题栏与主题菜单
+  BatteryRing.cs    环形电量控件
+  BatteryCache.cs   休眠设备的上次电量缓存
+  TrayIcon.cs       托盘电池图标、悬停检测
+  TrayHoverWindow.cs 托盘悬停卡片
+  TrayMenuWindow.cs 自绘托盘右键菜单
+  CloseConfirmWindow.cs 关闭确认弹窗
+  ElevationPromptWindow.cs 低权限提权弹窗
+  TaskbarWidget.cs  任务栏左侧电量条与检测
+  TaskbarTheme.cs   任务栏明暗检测（电池描边对比）
+  Theme.cs          当前主题的颜色/字体门面
+  ThemeManager.cs   浅色/深色/跟随系统与标题栏切换
+  SelfTest.cs       协议解析自检
+  Dump.cs           HID 诊断导出
+  AssemblyInfo.cs   版本与文件属性
+ui.xaml             界面布局与样式
+assets/app.ico      应用图标
+app.manifest        DPI / 权限清单
+```
+
+## 协议来源与致谢
+
+本项目的 C# 代码为独立实现，协议字段与命令参考了以下公开项目：
+
+- [Fan4Metal/mouse_tray](https://github.com/Fan4Metal/mouse_tray)：ATK/VXE/VGN（Nordic 52/54）、Razer、Lamzu、Logitech 等协议字段。
+- [OpenRazer](https://github.com/openrazer/openrazer)：Razer 90 字节报告与命令类。
+- [seerge/g-helper](https://github.com/seerge/g-helper)：ASUS ROG `0x12 0x07` 电量查询。
+- [LennardKittner/HyperHeadset](https://github.com/LennardKittner/HyperHeadset)：HyperX Cloud III 等电量包与 Cloud Flight 64 字节回退。
+- [hux0192/HyperX-Battery](https://github.com/hux0192/HyperX-Battery)：HyperX Cloud Flight 20 字节 `21 FF 05` 电量包。
+- [csmith/alphabat](https://github.com/csmith/alphabat)：HyperX Cloud Alpha Wireless `21 BB 0B`。
+- [Linux 内核 HyperX HID 驱动补丁](https://lkml.iu.edu/hypermail/linux/kernel/2606.3/06496.html)：Cloud III `0x66` 命令。
+- Microsoft HID 文档：`HidP_GetValueCaps` / `HidP_GetUsageValue` / HID IOCTL。
+
+详细许可与出处见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
+## 隐私
+
+- 不包含任何网络请求。
+- 不记录按键、鼠标移动或音频内容。
+- 日志只包含设备名称、VID/PID、协议名和读取结果，保存在本机。
+
+## 安全与权限
+
+- 默认以 `asInvoker` 运行，不需要管理员权限。
+- 只有在被低权限宿主启动、导致托盘图标无法注册时，才会提示通过 UAC 以管理员身份重启；是否提权由你决定。
+- 管理员权限只用于跨完整性级别注册托盘图标，不修改 DPI、灯效、EQ 等设备设置。
+- 设置、缓存和日志都在本机；默认位置见「使用说明」。
+- 诊断信息可能包含设备唯一 ID，公开前请先脱敏。
+
+## 参与贡献
+
+- 提交 Bug 请使用 Issue 模板，附 Windows 版本、设备型号、连接方式和诊断信息。
+- 新增设备协议请附 `--dump` 摘要、读取结果和参考协议来源，并更新 `THIRD_PARTY_NOTICES.md`。
+- 构建与代码风格见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
+## 商标
+
+Razer、ASUS ROG、HyperX、ATK、VXE、Lamzu、Logitech 等名称和商标归各自所有者。本项目为独立实现，与这些厂商无隶属或背书关系。
+
+## 版本
+
+当前公开版本 **1.0.0**，变更见 [CHANGELOG.md](CHANGELOG.md)。
+
+## License
+
+MIT，见 [LICENSE](LICENSE)。
+
+---
+
+GitHub：[@XAVIER0229](https://github.com/XAVIER0229)
