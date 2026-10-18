@@ -13,6 +13,12 @@ namespace GearPower
         [STAThread]
         public static int Main(string[] args)
         {
+            Log.Info("GearPower " + Assembly.GetExecutingAssembly().GetName().Version + " starting");
+            Log.Info("OS: " + Environment.OSVersion + "; OS64=" + Environment.Is64BitOperatingSystem +
+                     "; Process64=" + Environment.Is64BitProcess + "; CLR=" + Environment.Version);
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+                Log.Error("Fatal unhandled exception: " + e.ExceptionObject);
+
             bool demo = args != null && args.Any(a => string.Equals(a, "--demo", StringComparison.OrdinalIgnoreCase));
             bool selftest = args != null && args.Any(a => string.Equals(a, "--selftest", StringComparison.OrdinalIgnoreCase));
             bool dump = args != null && args.Any(a => string.Equals(a, "--dump", StringComparison.OrdinalIgnoreCase));

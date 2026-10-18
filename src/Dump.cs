@@ -34,7 +34,16 @@ namespace GearPower
                 sb.AppendLine("----------------------------------------");
             }
 
-            string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "hid-dump.txt");
+            string dir = Log.LogDirectory;
+            if (string.IsNullOrEmpty(dir))
+            {
+                string local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                dir = string.IsNullOrEmpty(local)
+                    ? Path.Combine(Path.GetTempPath(), "GearPower", "logs")
+                    : Path.Combine(local, "GearPower", "logs");
+            }
+            Directory.CreateDirectory(dir);
+            string path = Path.Combine(dir, "hid-dump.txt");
             File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
             Log.Info("Dump written to " + path);
         }

@@ -22,12 +22,19 @@ namespace GearPower
             {
             }
 
-            string exeDir = AppDomain.CurrentDomain.BaseDirectory;
+            string temp = "";
+            try
+            {
+                temp = Path.GetTempPath();
+            }
+            catch
+            {
+            }
+
             string[] candidates = new string[]
             {
-                Path.Combine(exeDir, "logs"),
-                exeDir,
-                string.IsNullOrEmpty(local) ? null : Path.Combine(local, "GearPower")
+                string.IsNullOrEmpty(local) ? null : Path.Combine(local, "GearPower", "logs"),
+                string.IsNullOrEmpty(temp) ? null : Path.Combine(temp, "GearPower", "logs")
             };
 
             foreach (string candidate in candidates)

@@ -136,7 +136,16 @@ namespace GearPower
             lines.Add("RESULT  passed=" + passed + " failed=" + failed);
             try
             {
-                string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "selftest.log");
+                string dir = Log.LogDirectory;
+                if (string.IsNullOrEmpty(dir))
+                {
+                    string local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                    dir = string.IsNullOrEmpty(local)
+                        ? Path.Combine(Path.GetTempPath(), "GearPower", "logs")
+                        : Path.Combine(local, "GearPower", "logs");
+                }
+                Directory.CreateDirectory(dir);
+                string path = Path.Combine(dir, "selftest.log");
                 File.WriteAllLines(path, lines, Encoding.UTF8);
                 lines.Add("LOG  " + path);
             }

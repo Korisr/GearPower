@@ -128,7 +128,7 @@ Windows 10/11 · .NET Framework 4.8 · 单文件 · 本地读取，不联网
 - **设备休眠**：2.4G 接收器一直在线，但鼠标/耳机关机或休眠时不会返回电量。动一下鼠标、按一下耳机电源，再刷新。
 - **上次电量缓存**：读到电量后写入 `battery-cache.tsv`（优先 `%LOCALAPPDATA%\GearPower`，不可写时放在 exe 同目录）。设备休眠时显示最后一次读数和时间；删除该文件即可清空记录。
 - **设备清单**：40 个 HID 接口会全部列出，包括键盘、灯控、麦克风等。只有带电量协议的设备才会生成卡片。
-- **日志**：`logs\app.log`（exe 同目录；若目录不可写则退到 `%LOCALAPPDATA%\GearPower`）。
+- **日志**：固定写入 `%LOCALAPPDATA%\GearPower\logs\app.log`，不再在 exe 所在目录生成 `logs` 文件夹；若该目录不可写，则退到 `%TEMP%\GearPower\logs\app.log`。
 - **与厂商软件冲突**：Razer Synapse、Armoury Crate、NGENUITY、ATK HUB 等可能占用设备。若一直读不到，先退出厂商软件再试；本软件只发送读取电量的查询，不修改任何设置。
 
 ## 常见问题
@@ -158,18 +158,18 @@ exe 未签名，可能触发 SmartScreen。点「更多信息 → 仍要运行�
 GearPower.exe                 正常启动
 GearPower.exe --demo          用示例数据预览界面（不访问硬件）
 GearPower.exe --demo --dark   以深色主题预览（--light 为浅色）
-GearPower.exe --selftest      运行协议解析自检，写 selftest.log
-GearPower.exe --dump          生成 hid-dump.txt（所有 HID 接口/字段）
+GearPower.exe --selftest      运行协议解析自检，写 %LOCALAPPDATA%\GearPower\logs\selftest.log
+GearPower.exe --dump          生成 hid-dump.txt（%LOCALAPPDATA%\GearPower\logs）
 GearPower.exe --tray-preview  生成托盘电池预览图
 ```
 
 `--dump` 适合排查新设备：把 `hid-dump.txt` 或界面里复制的诊断信息发出来即可。
 
-> `hid-dump.txt`、`logs/app.log` 和「复制诊断信息」可能包含设备名称、VID/PID 或接口路径中的唯一 ID；公开发布前请先删除序列号等敏感字段。
+> `hid-dump.txt`、`%LOCALAPPDATA%\GearPower\logs\app.log` 和「复制诊断信息」可能包含设备名称、VID/PID 或接口路径中的唯一 ID；公开发布前请先删除序列号等敏感字段。
 
 ## 构建
 
-当前版本：**1.0.0**。需要 Windows 10/11 自带的 .NET Framework 4.8 与 `csc.exe`（无需 Visual Studio / .NET SDK）。
+当前版本：**1.0.1**。需要 Windows 10/11 自带的 .NET Framework 4.8 与 `csc.exe`（无需 Visual Studio / .NET SDK）。
 
 ```powershell
 git clone https://github.com/XAVIER0229/GearPower.git
@@ -256,7 +256,7 @@ Razer、ASUS ROG、HyperX、ATK、VXE、Lamzu、Logitech 等名称和商标归�
 
 ## 版本
 
-当前公开版本 **1.0.0**，变更见 [CHANGELOG.md](CHANGELOG.md)。
+当前公开版本 **1.0.1**，变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## License
 

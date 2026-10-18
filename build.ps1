@@ -58,11 +58,12 @@ Get-ChildItem (Join-Path $root "assets") -Filter "*.png" | Copy-Item -Destinatio
 if (-not $SkipTest) {
     Write-Host "Running self-test..." -ForegroundColor Cyan
     $process = Start-Process -FilePath (Join-Path $dist "GearPower.exe") -ArgumentList "--selftest" -Wait -PassThru
+    $localAppData = [Environment]::GetFolderPath("LocalApplicationData")
+    $selftestLog = Join-Path (Join-Path $localAppData "GearPower\logs") "selftest.log"
     if ($process.ExitCode -ne 0) {
-        throw "Self-test failed. See dist\selftest.log"
+        throw "Self-test failed. See $selftestLog"
     }
-    Copy-Item (Join-Path $dist "selftest.log") (Join-Path $dist "build-selftest.log") -Force
-    Write-Host "Self-test passed." -ForegroundColor Green
+    Write-Host "Self-test passed. Log: $selftestLog" -ForegroundColor Green
 }
 
 Write-Host "Output: $dist\GearPower.exe" -ForegroundColor Green

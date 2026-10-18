@@ -1652,7 +1652,7 @@ namespace GearPower
             }
             else if (tray == null)
             {
-                text = "托盘图标创建失败，关闭窗口会直接退出。\n\n请查看 logs\\app.log，或尝试以管理员身份运行。";
+                text = "托盘图标创建失败，关闭窗口会直接退出。\n\n请点击「设置 → 工具 → 打开日志」查看 app.log，或尝试以管理员身份运行。";
             }
             else
             {
