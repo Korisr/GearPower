@@ -25,6 +25,7 @@ namespace GearPower
         public int Bottom;
         public int StartLeft;
         public int TrayLeft;
+        public string Reason;
 
         public int FreeLeft
         {
@@ -34,8 +35,6 @@ namespace GearPower
 
     internal static class TaskbarGeometry
     {
-        private const int QunsBusy = 2;
-        private const int QunsD3dFullScreen = 3;
         private const int QunsPresentationMode = 4;
 
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
@@ -49,6 +48,12 @@ namespace GearPower
 
         [DllImport("user32.dll")]
         private static extern bool IsWindowVisible(IntPtr hwnd);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetForegroundWindow();
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        private static extern int GetClassName(IntPtr hwnd, System.Text.StringBuilder text, int count);
 
         [DllImport("shell32.dll")]
         private static extern int SHQueryUserNotificationState(out int state);
@@ -66,24 +71,56 @@ namespace GearPower
         {
             var snapshot = new TaskbarSnapshot();
             IntPtr taskbar = FindWindow("Shell_TrayWnd", null);
-            if (taskbar == IntPtr.Zero) return snapshot;
+            if (taskbar == IntPtr.Zero)
+            {
+                snapshot.Reason = "任务栏不可见";
+                return snapshot;
+            }
             snapshot.Found = true;
-            if (!IsWindowVisible(taskbar)) return snapshot;
+            if (!IsWindowVisible(taskbar))
+            {
+                snapshot.Reason = "任务栏不可见";
+                return snapshot;
+            }
 
             RECT rect;
-            if (!GetWindowRect(taskbar, out rect)) return snapshot;
+            if (!GetWindowRect(taskbar, out rect))
+            {
+                snapshot.Reason = "任务栏不可见";
+                return snapshot;
+            }
             snapshot.Left = rect.Left;
             snapshot.Top = rect.Top;
             snapshot.Right = rect.Right;
             snapshot.Bottom = rect.Bottom;
-            if (snapshot.Right - snapshot.Left < 100 || snapshot.Bottom - snapshot.Top < 20) return snapshot;
-
-            int state;
-            if (SHQueryUserNotificationState(out state) == 0 && state == QunsD3dFullScreen)
+            if (snapshot.Right - snapshot.Left < 100 || snapshot.Bottom - snapshot.Top < 20)
+            {
+                snapshot.Reason = "任务栏不可见";
                 return snapshot;
+            }
 
             Drawing.Rectangle bounds = WinForms.Screen.FromHandle(taskbar).Bounds;
-            if (snapshot.Top >= bounds.Bottom - 4) return snapshot;
+            if (snapshot.Top >= bounds.Bottom - 4)
+            {
+                snapshot.Reason = "任务栏自动隐藏";
+                return snapshot;
+            }
+
+            int state;
+            if (SHQueryUserNotificationState(out state) == 0)
+            {
+                if (state == 1 || state == 3 || state == QunsPresentationMode)
+                {
+                    snapshot.Reason = "全屏应用";
+                    return snapshot;
+                }
+            }
+
+            if (IsForegroundFullscreen(taskbar, bounds))
+            {
+                snapshot.Reason = "全屏应用";
+                return snapshot;
+            }
 
             snapshot.Centered = ReadCentered();
             IntPtr start = FindWindowEx(taskbar, IntPtr.Zero, "Start", null);
@@ -101,6 +138,30 @@ namespace GearPower
 
             snapshot.Visible = true;
             return snapshot;
+        }
+
+        private static bool IsForegroundFullscreen(IntPtr taskbar, Drawing.Rectangle bounds)
+        {
+            IntPtr foreground = GetForegroundWindow();
+            if (foreground == IntPtr.Zero || foreground == taskbar) return false;
+
+            var className = new System.Text.StringBuilder(128);
+            if (GetClassName(foreground, className, className.Capacity) > 0)
+            {
+                string name = className.ToString();
+                if (name.Equals("Progman", StringComparison.OrdinalIgnoreCase) ||
+                    name.Equals("WorkerW", StringComparison.OrdinalIgnoreCase) ||
+                    name.Equals("Shell_TrayWnd", StringComparison.OrdinalIgnoreCase) ||
+                    name.Equals("Shell_SecondaryTrayWnd", StringComparison.OrdinalIgnoreCase))
+                    return false;
+            }
+
+            RECT rect;
+            if (!GetWindowRect(foreground, out rect)) return false;
+            return rect.Left <= bounds.Left + 2 &&
+                   rect.Top <= bounds.Top + 2 &&
+                   rect.Right >= bounds.Right - 2 &&
+                   rect.Bottom >= bounds.Bottom - 2;
         }
 
         private static bool ReadCentered()
@@ -156,6 +217,18 @@ namespace GearPower
         private const int WsExTransparent = 0x00000020;
         private const int WsExToolWindow = 0x00000080;
         private const int WsExNoActivate = 0x08000000;
+        private const uint EventSystemForeground = 0x0003;
+        private const uint WineventOutofcontext = 0x0000;
+
+        private delegate void WinEventDelegate(IntPtr hook, uint eventType, IntPtr hwnd,
+            int idObject, int idChild, uint thread, uint time);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr SetWinEventHook(uint eventMin, uint eventMax, IntPtr module,
+            WinEventDelegate callback, uint processId, uint threadId, uint flags);
+
+        [DllImport("user32.dll")]
+        private static extern bool UnhookWinEvent(IntPtr hook);
 
         [DllImport("user32.dll")]
         private static extern bool SetWindowPos(IntPtr hwnd, IntPtr after, int x, int y, int cx, int cy, int flags);
@@ -168,6 +241,9 @@ namespace GearPower
 
         private readonly Action<string> statusChanged;
         private readonly DispatcherTimer timer;
+        private readonly DispatcherTimer hideTimer;
+        private readonly WinEventDelegate winEventProc;
+        private IntPtr winEventHook;
         private List<DeviceReading> readings = new List<DeviceReading>();
         private Window window;
         private int mode;
@@ -185,6 +261,25 @@ namespace GearPower
             timer = new DispatcherTimer();
             timer.Interval = TimeSpan.FromSeconds(3);
             timer.Tick += (s, e) => Refresh();
+
+            hideTimer = new DispatcherTimer();
+            hideTimer.Interval = TimeSpan.FromMilliseconds(450);
+            hideTimer.Tick += (s, e) =>
+            {
+                hideTimer.Stop();
+                if (!disposed) RefreshInternal(true);
+            };
+
+            winEventProc = OnForegroundChanged;
+            try
+            {
+                winEventHook = SetWinEventHook(EventSystemForeground, EventSystemForeground,
+                    IntPtr.Zero, winEventProc, 0, 0, WineventOutofcontext);
+            }
+            catch
+            {
+                winEventHook = IntPtr.Zero;
+            }
         }
 
         public void SetMode(int value)
@@ -194,6 +289,7 @@ namespace GearPower
             if (mode == 0)
             {
                 timer.Stop();
+                hideTimer.Stop();
                 HideWindow();
                 Report("已关闭");
                 return;
@@ -235,9 +331,8 @@ namespace GearPower
         {
             if (disposed || mode == 0) return;
             Refresh();
-            if (window != null)
+            if (window != null && window.IsVisible)
             {
-                window.Show();
                 window.Topmost = true;
                 ReassertTopmost();
             }
@@ -245,8 +340,14 @@ namespace GearPower
 
         public void Refresh()
         {
+            RefreshInternal(false);
+        }
+
+        private void RefreshInternal(bool forceHide)
+        {
             if (disposed || mode == 0)
             {
+                hideTimer.Stop();
                 HideWindow();
                 return;
             }
@@ -254,20 +355,17 @@ namespace GearPower
             TaskbarSnapshot snapshot = TaskbarGeometry.Get();
             if (!snapshot.Found || !snapshot.Visible)
             {
-                HideWindow();
-                Report("任务栏不可见");
+                HandleHidden(snapshot.Reason ?? "任务栏不可见", forceHide);
                 return;
             }
             if (!snapshot.Centered)
             {
-                HideWindow();
-                Report("徽标靠左，已隐藏");
+                HandleHidden("徽标靠左，已隐藏", forceHide);
                 return;
             }
             if (readings.Count == 0)
             {
-                HideWindow();
-                Report("未发现设备");
+                HandleHidden("未发现设备", forceHide);
                 return;
             }
 
@@ -277,24 +375,22 @@ namespace GearPower
             int available = snapshot.FreeLeft - 16;
             if (available < 120 * scale)
             {
-                HideWindow();
-                Report("左侧空间不足");
+                HandleHidden("左侧空间不足", forceHide);
                 return;
             }
             int maxWidthDip = (int)(available / scale);
             if (maxWidthDip < width)
             {
-                HideWindow();
-                Report("左侧空间不足");
+                HandleHidden("左侧空间不足", forceHide);
                 return;
             }
             if (width < 120)
             {
-                HideWindow();
-                Report("左侧空间不足");
+                HandleHidden("左侧空间不足", forceHide);
                 return;
             }
 
+            hideTimer.Stop();
             if (window == null) CreateWindow();
             window.Width = width;
             if (contentDirty)
@@ -316,6 +412,44 @@ namespace GearPower
                 ReassertTopmost();
             }
             Report("已显示：任务栏左侧");
+        }
+
+        private void HandleHidden(string reason, bool forceHide)
+        {
+            if (!forceHide && reason != "全屏应用")
+            {
+                if (!hideTimer.IsEnabled) hideTimer.Start();
+                return;
+            }
+            hideTimer.Stop();
+            HideWindow();
+            Report(reason);
+        }
+
+        private void OnForegroundChanged(IntPtr hook, uint eventType, IntPtr hwnd,
+            int idObject, int idChild, uint thread, uint time)
+        {
+            if (disposed || mode == 0 || window == null) return;
+            try
+            {
+                if (window.Dispatcher.CheckAccess())
+                {
+                    ReassertTopmost();
+                    Refresh();
+                }
+                else
+                {
+                    window.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        if (disposed) return;
+                        ReassertTopmost();
+                        Refresh();
+                    }));
+                }
+            }
+            catch
+            {
+            }
         }
 
         private void ReassertTopmost()
@@ -385,10 +519,7 @@ namespace GearPower
             row.VerticalAlignment = VerticalAlignment.Center;
 
             int count = Math.Min(data.Count, 3);
-            var ordered = data
-                .OrderBy(r => r.Percent.HasValue ? r.Percent.Value : 101)
-                .Take(count)
-                .ToList();
+            var ordered = DevicePriority.Sort(data).Take(count).ToList();
             for (int i = 0; i < ordered.Count; i++)
             {
                 if (i > 0)
@@ -467,6 +598,12 @@ namespace GearPower
             if (disposed) return;
             disposed = true;
             timer.Stop();
+            hideTimer.Stop();
+            if (winEventHook != IntPtr.Zero)
+            {
+                try { UnhookWinEvent(winEventHook); } catch { }
+                winEventHook = IntPtr.Zero;
+            }
             if (window != null)
             {
                 try { window.Close(); } catch { }

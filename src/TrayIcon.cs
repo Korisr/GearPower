@@ -291,20 +291,7 @@ namespace GearPower
 
         public static DeviceReading Primary(List<DeviceReading> readings)
         {
-            if (readings == null || readings.Count == 0) return null;
-            DeviceReading best = null;
-            foreach (DeviceReading reading in readings)
-            {
-                if (best == null)
-                {
-                    best = reading;
-                    continue;
-                }
-                if (!reading.Percent.HasValue) continue;
-                if (!best.Percent.HasValue || reading.Percent.Value < best.Percent.Value)
-                    best = reading;
-            }
-            return best;
+            return DevicePriority.Primary(readings);
         }
 
         public static WpfColor ColorFor(DeviceReading reading)

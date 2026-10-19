@@ -98,6 +98,19 @@ namespace GearPower
                 check("mchose battery = 76%", mchose != null && mchose.Percent == 76 && !mchose.Charging);
                 check("mchose device name", mchose != null && mchose.ModelName == "K7 Ultra");
 
+                var chargingLow = new DeviceReading { Name = "charging low", Percent = 5, Charging = true };
+                var dischargingMid = new DeviceReading { Name = "discharging mid", Percent = 40 };
+                var dischargingHigh = new DeviceReading { Name = "discharging high", Percent = 80 };
+                var priorityList = new List<DeviceReading> { chargingLow, dischargingHigh, dischargingMid };
+                check("priority skips charging low battery", DevicePriority.Primary(priorityList).Name == "discharging mid");
+                check("priority sort puts charging last", DevicePriority.Sort(priorityList)[2].Name == "charging low");
+                var allCharging = new List<DeviceReading>
+                {
+                    new DeviceReading { Name = "a", Percent = 30, Charging = true },
+                    new DeviceReading { Name = "b", Percent = 5, Charging = true }
+                };
+                check("priority falls back when all charging", DevicePriority.Primary(allCharging).Name == "b");
+
                 byte[] lamzu = new byte[9];
                 lamzu[1] = 0xA1;
                 lamzu[6] = 0x83;

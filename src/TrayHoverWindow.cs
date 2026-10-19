@@ -32,6 +32,7 @@ namespace GearPower
             List<DeviceReading> data = readings == null
                 ? new List<DeviceReading>()
                 : new List<DeviceReading>(readings);
+            data = DevicePriority.Sort(data);
             DeviceReading primary = TrayIconRenderer.Primary(data);
 
             var card = new Border();
@@ -124,7 +125,7 @@ namespace GearPower
             string subtitleText;
             if (readings.Count == 0) subtitleText = "0 台设备";
             else if (primary != null && primary.Percent.HasValue)
-                subtitleText = readings.Count + " 台设备 · 最低 " + primary.Percent.Value + "%";
+                subtitleText = readings.Count + " 台设备 · 优先 " + primary.Percent.Value + "%";
             else subtitleText = readings.Count + " 台设备 · 暂无电量";
             var subtitle = Text(subtitleText, 9, Theme.Muted, FontWeights.Normal);
             subtitle.HorizontalAlignment = HorizontalAlignment.Right;
@@ -169,7 +170,7 @@ namespace GearPower
                 badge.Padding = new Thickness(3, 0, 3, 0);
                 badge.Margin = new Thickness(5, 0, 0, 0);
                 badge.VerticalAlignment = VerticalAlignment.Center;
-                badge.Child = Text("最低", 8, Theme.Accent, FontWeights.SemiBold);
+                badge.Child = Text("优先", 8, Theme.Accent, FontWeights.SemiBold);
                 nameRow.Children.Add(badge);
             }
             texts.Children.Add(nameRow);

@@ -28,6 +28,7 @@ namespace GearPower
             List<DeviceReading> data = readings == null
                 ? new List<DeviceReading>()
                 : new List<DeviceReading>(readings);
+            data = DevicePriority.Sort(data);
             DeviceReading primary = TrayIconRenderer.Primary(data);
 
             var card = new Border();
@@ -157,7 +158,7 @@ namespace GearPower
             var title = Text("GearPower", 12.5, Theme.Text, FontWeights.SemiBold);
             var subtitleText = readings.Count + " 台设备";
             if (primary != null && primary.Percent.HasValue)
-                subtitleText += " · 最低 " + primary.Percent.Value + "%";
+                subtitleText += " · 优先 " + primary.Percent.Value + "%";
             var subtitle = Text(subtitleText, 9.5, Theme.Muted, FontWeights.Normal);
             subtitle.Margin = new Thickness(0, 2, 0, 0);
             texts.Children.Add(title);
@@ -216,7 +217,7 @@ namespace GearPower
                 badge.Padding = new Thickness(4, 1, 4, 1);
                 badge.Margin = new Thickness(6, 0, 0, 0);
                 badge.VerticalAlignment = VerticalAlignment.Center;
-                badge.Child = Text("最低", 8.5, Theme.Accent, FontWeights.SemiBold);
+                badge.Child = Text("优先", 8.5, Theme.Accent, FontWeights.SemiBold);
                 nameRow.Children.Add(badge);
             }
             texts.Children.Add(nameRow);
