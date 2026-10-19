@@ -80,6 +80,7 @@ namespace GearPower
         {
             new AsusProtocol(),
             new RazerProtocol(),
+            new RazerHeadsetProtocol(),
             new AtkProtocol(),
             new MchoseProtocol(),
             new LamzuProtocol(),
@@ -271,6 +272,93 @@ namespace GearPower
             if (response[1] != 0x02) return null;
             int raw = response[10];
             return ClampPercent((int)Math.Round(raw / 255.0 * 100.0));
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // Razer BlackShark V2 Pro 2.4 (1532:0555): interrupt OUT report 0x02,
+    // 64-byte request, interrupt IN response; battery at response byte 15.
+    // Reference: tcr27/razer-blackshark-battery-info.
+    // ---------------------------------------------------------------------
+    public sealed class RazerHeadsetProtocol : HidProtocol
+    {
+        public override string Name
+        {
+            get { return "Razer 耳机 2.4G"; }
+        }
+
+        public override bool Matches(DeviceGroup group)
+        {
+            if (group.Vid != 0x1532) return false;
+            return group.Interfaces.Any(i => i.UsagePage == 0xFF00 &&
+                                             i.OutputLength >= 64 &&
+                                             i.InputLength >= 64);
+        }
+
+        public override ProbeResult Probe(DeviceGroup group)
+        {
+            HidInterfaceInfo iface = group.Interfaces
+                .Where(i => i.UsagePage == 0xFF00 && i.OutputLength >= 64 && i.InputLength >= 64)
+                .OrderByDescending(i => i.OutputLength >= 64)
+                .FirstOrDefault();
+            if (iface == null) return null;
+
+            string error;
+            using (HidHandle handle = HidHandle.Open(iface.Path, true, out error))
+            {
+                if (handle == null)
+                {
+                    Log.Debug("Razer headset open failed: " + error);
+                    return null;
+                }
+
+                byte[] request = BuildRequest(iface.OutputLength);
+                for (int attempt = 0; attempt < 3; attempt++)
+                {
+                    bool sent = handle.Write(request, 700);
+                    if (!sent) sent = handle.SetOutputReport(request);
+                    if (!sent) continue;
+
+                    Thread.Sleep(120);
+                    for (int read = 0; read < 3; read++)
+                    {
+                        byte[] response = handle.Read(128, 650);
+                        int? percent = ParseBattery(response);
+                        if (percent.HasValue)
+                            return Result(percent, false, percent.Value >= 100, false,
+                                Name, "Razer 2.4G 耳机 · 64 字节中断报告");
+                    }
+                }
+            }
+            return null;
+        }
+
+        public static byte[] BuildRequest(int outputLength)
+        {
+            int length = outputLength >= 64 ? outputLength : 64;
+            var data = new byte[length];
+            data[0] = 0x02;
+            data[1] = 0x80;
+            data[2] = 0x08;
+            data[5] = 0x50;
+            data[6] = 0x41;
+            data[7] = 0x08;
+            data[9] = 0x03;
+            data[10] = 0x21;
+            return data;
+        }
+
+        public static int? ParseBattery(byte[] response)
+        {
+            if (response == null || response.Length < 15) return null;
+            // USB interrupt reads include report id 0x02, so the payload
+            // battery byte (Python index 15) is response[15]. Some HID
+            // stacks strip the report id; accept response[14] too.
+            int index = response[0] == 0x02 && response.Length > 15 ? 15 : 14;
+            if (index >= response.Length) return null;
+            int value = response[index];
+            if (value < 1 || value > 100) return null;
+            return value;
         }
     }
 

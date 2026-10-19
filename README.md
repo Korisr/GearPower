@@ -108,6 +108,7 @@ Windows 10/11 · .NET Framework 4.8 · 单文件 · 本地读取，不联网
 | 迈从 MCHOSE K7 Ultra | Realtek `0xFF01`，报告 `0x11/0x13`，`0xE2` 电量事件 | **已实机验证**（2.4G，83%） |
 | 迈从 MCHOSE L7 Pro | 同上（Realtek `0xFF01`） | 协议已实现，待 L7 Pro 实机验证 |
 | Razer 雷蛇无线鼠标 | 90 字节特性报告，命令类 `0x02/0x07` | 按 OpenRazer 公开协议实现 |
+| Razer BlackShark V2 Pro 2.4 耳机 | 64 字节中断 OUT/IN，报告 `0x02`，响应第 15 字节为电量 | 协议已实现，待实机验证 |
 | ASUS ROG 鼠标 / 耳机 | 特性报告 `0x12 0x07`，电量在第 5 字节 | 按 G-Helper 公开协议实现；Omni 接收器多设备暂未完全覆盖 |
 | HyperX Cloud Flight / Flight S | 20 字节输出报告 `21 FF 05`（另有 64 字节回退） | **已实机验证**（Cloud Flight Wireless，60%） |
 | HyperX Cloud III Wireless | 62 字节输出报告 `0x66` | 按 Linux 内核 HID 驱动实现 |
@@ -177,7 +178,7 @@ GearPower.exe --tray-preview  生成托盘电池预览图
 
 ## 构建
 
-当前版本：**1.1.1**。需要 Windows 10/11 自带的 .NET Framework 4.8 与 `csc.exe`（无需 Visual Studio / .NET SDK）。
+当前版本：**1.1.2-beta**。需要 Windows 10/11 自带的 .NET Framework 4.8 与 `csc.exe`（无需 Visual Studio / .NET SDK）。
 
 ```powershell
 git clone https://github.com/XAVIER0229/GearPower.git
@@ -265,7 +266,7 @@ Razer、ASUS ROG、HyperX、ATK、VXE、Lamzu、Logitech 等名称和商标归�
 
 ## 版本
 
-当前公开版本 **1.1.1**，变更见 [CHANGELOG.md](CHANGELOG.md)。
+当前公开版本 **1.1.2-beta**，变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## License
 

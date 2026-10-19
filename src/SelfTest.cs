@@ -58,6 +58,16 @@ namespace GearPower
                 razerReply[10] = 128;
                 check("razer battery = 50%", RazerProtocol.ParseBattery(razerReply) == 50);
                 check("razer rejects empty reply", RazerProtocol.ParseBattery(new byte[3]) == null);
+                byte[] razerHeadsetRequest = RazerHeadsetProtocol.BuildRequest(64);
+                check("razer headset request header", razerHeadsetRequest.Length == 64 &&
+                    razerHeadsetRequest[0] == 0x02 && razerHeadsetRequest[1] == 0x80 &&
+                    razerHeadsetRequest[10] == 0x21);
+                byte[] razerHeadsetReply = new byte[64];
+                razerHeadsetReply[0] = 0x02;
+                razerHeadsetReply[15] = 77;
+                check("razer headset battery = 77%", RazerHeadsetProtocol.ParseBattery(razerHeadsetReply) == 77);
+                razerHeadsetReply[15] = 0;
+                check("razer headset rejects zero", RazerHeadsetProtocol.ParseBattery(razerHeadsetReply) == null);
 
                 byte[] nordic = Nordic52Protocol.BuildRequest();
                 check("nordic52 packet", nordic.Length == 17 && nordic[0] == 0x08 && nordic[1] == 0x04 && nordic[16] == 0x49);

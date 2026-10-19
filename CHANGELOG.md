@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.2-beta] - 2026-10-19
+
+预发布测试版，新增 Razer BlackShark V2 Pro 2.4 耳机支持。
+
+### Features
+
+- 新增 Razer BlackShark V2 Pro 2.4 耳机电量读取（64 字节中断 OUT/IN，待实机验证）
+
 ## [1.1.1] - 2026-10-19
 
 ### Fixes

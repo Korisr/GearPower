@@ -207,6 +207,7 @@ namespace GearPower
             Add(m, 0x1532, 0x0070, "Razer Lancehead Wireless", DeviceKind.Mouse, false);
             Add(m, 0x1532, 0x00D1, "Razer Pro Click V2", DeviceKind.Mouse, true);
             Add(m, 0x1532, 0x00D0, "Razer Pro Click V2", DeviceKind.Mouse, false);
+            Add(m, 0x1532, 0x0555, "Razer BlackShark V2 Pro 2.4", DeviceKind.Headset, true);
 
             return m;
         }

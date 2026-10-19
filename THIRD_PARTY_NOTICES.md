@@ -8,6 +8,7 @@ command layouts and public reverse-engineering notes were used as references.
 | --- | --- | --- |
 | [Fan4Metal/mouse_tray](https://github.com/Fan4Metal/mouse_tray) | Not declared in repository at the time of writing | ATK/VXE/VGN (Compx Nordic 52/54), Razer, Lamzu and Logitech protocol layouts |
 | [OpenRazer](https://github.com/openrazer/openrazer) | GPL-2.0-or-later | Razer 90-byte feature report and command class |
+| [tcr27/razer-blackshark-battery-info](https://github.com/tcr27/razer-blackshark-battery-info) | MIT | Razer BlackShark V2 Pro `1532:0555` 64-byte interrupt OUT/IN battery layout |
 | [seerge/g-helper](https://github.com/seerge/g-helper) | MIT | ASUS ROG `0x12 0x07` battery query |
 | [LennardKittner/HyperHeadset](https://github.com/LennardKittner/HyperHeadset) | MIT | HyperX Cloud III and Cloud Flight 64-byte fallback battery packets |
 | [hux0192/HyperX-Battery](https://github.com/hux0192/HyperX-Battery) | MIT (see LICENSE.txt) | HyperX Cloud Flight 20-byte `21 FF 05` battery packet |
