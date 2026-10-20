@@ -230,12 +230,33 @@ namespace GearPower
             window.Loaded += Window_Loaded;
             window.SourceInitialized += (s, e) =>
             {
-                IntPtr hwnd = new WindowInteropHelper(window).Handle;
-                hwndSource = HwndSource.FromHwnd(hwnd);
-                if (hwndSource != null) hwndSource.AddHook(WndProc);
+                try
+                {
+                    // During a UAC restart / rapid recreate WPF can raise
+                    // SourceInitialized while the HWND is already gone.
+                    // HwndSource.FromHwnd(IntPtr.Zero) throws
+                    // "The Hwnd of a Window cannot be zero", so guard it.
+                    IntPtr hwnd = new WindowInteropHelper(window).Handle;
+                    if (hwnd == IntPtr.Zero)
+                    {
+                        Log.Debug("SourceInitialized with zero HWND; skipping hook");
+                        return;
+                    }
+                    hwndSource = HwndSource.FromHwnd(hwnd);
+                    if (hwndSource != null) hwndSource.AddHook(WndProc);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Window source initialization failed: " + ex.Message);
+                }
             };
             window.Closed += (s, e) =>
             {
+                if (hwndSource != null)
+                {
+                    try { hwndSource.RemoveHook(WndProc); } catch { }
+                    hwndSource = null;
+                }
                 refreshTimer.Stop();
                 toastTimer.Stop();
                 themeTimer.Stop();

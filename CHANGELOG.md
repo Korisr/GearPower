@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.5-beta] - 2026-10-20
+
+### Fixes
+
+- 修复点击「以管理员身份重启」后仍可能出现的「零的 Hwnd 无效」错误
+- 窗口 `SourceInitialized` 现在会检查 HWND 是否为零，并捕获 `HwndSource.FromHwnd` 异常
+
 ## [1.1.4-beta] - 2026-10-20
 
 ### Features
