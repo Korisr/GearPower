@@ -1077,6 +1077,10 @@ namespace GearPower
         private const byte SoftwareId = 0x01;
         private const byte RootFeature = 0x00;
         private const ushort UnifiedBattery = 0x1004;
+        private const ushort BatteryStatus = 0x1000;
+        private const ushort BatteryVoltage = 0x1001;
+        private const ushort DeviceName = 0x0005;
+        private const ushort DeviceFriendlyName = 0x0007;
 
         public override string Name
         {
@@ -1104,20 +1108,113 @@ namespace GearPower
                 {
                     HidHandle longH = longHandle ?? shortHandle;
                     byte dev = ResolveDeviceIndex(shortHandle, longH);
-                    if (dev == 0) return null;
-                    int featureIndex = FeatureIndex(shortHandle, longH, dev, UnifiedBattery);
-                    if (featureIndex <= 0) return null;
-                    byte[] response = Call(shortHandle, longH, dev, (byte)featureIndex, 0x01, 0, 0, 0, 320);
-                    if (response == null || response.Length < 7) return null;
-                    int percent = response[4];
-                    if (percent < 0 || percent > 100) return null;
-                    int chargingStatus = response[6];
-                    bool charging = chargingStatus == 1 || chargingStatus == 2 || chargingStatus == 4;
-                    bool full = chargingStatus == 3 || percent >= 100;
-                    return Result(percent, charging && percent < 100, full, false, Name,
-                        "Logitech UnifiedBattery · 设备索引 " + dev);
+                    if (dev == 0)
+                    {
+                        Thread.Sleep(180);
+                        dev = ResolveDeviceIndex(shortHandle, longH);
+                    }
+                    if (dev == 0)
+                    {
+                        Log.Debug("Logitech HID++ device index not found");
+                        return null;
+                    }
+
+                    // A receiver often answers the wake-up ping before the
+                    // paired mouse is ready to serve feature requests.
+                    Thread.Sleep(260);
+                    Log.Debug("Logitech HID++ device index " + dev);
+
+                    ProbeResult legacy = ReadLegacyBattery(shortHandle, longH, dev);
+                    if (legacy != null) return legacy;
+
+                    int featureIndex = BatteryFeature(shortHandle, longH, dev, UnifiedBattery);
+                    if (featureIndex > 0)
+                    {
+                        byte[] response = CallLong(shortHandle, longH, dev, (byte)featureIndex, 0x01, 0, 0, 0, 320);
+                        if (response != null && response.Length >= 7)
+                        {
+                            int percent = response[4];
+                            if (percent >= 0 && percent <= 100)
+                            {
+                                int chargingStatus = response[6];
+                                bool charging = chargingStatus == 1 || chargingStatus == 2 || chargingStatus == 4;
+                                bool full = chargingStatus == 3 || percent >= 100;
+                                return NamedResult(Result(percent, charging && percent < 100, full, false, Name,
+                                    "Logitech UnifiedBattery · 设备索引 " + dev), shortHandle, longH, dev);
+                            }
+                        }
+                    }
+
+                    // Older mice (for example G Pro Wireless on a C539
+                    // receiver) expose Battery Status 0x1000 instead of
+                    // Unified Battery 0x1004.
+                    featureIndex = BatteryFeature(shortHandle, longH, dev, BatteryStatus);
+                    if (featureIndex > 0)
+                    {
+                        byte[] response = CallLong(shortHandle, longH, dev, (byte)featureIndex, 0x00, 0, 0, 0, 320);
+                        if (response != null && response.Length >= 7)
+                        {
+                            int percent = response[4];
+                            if (percent >= 0 && percent <= 100)
+                            {
+                                int chargingStatus = response[6];
+                                bool charging = chargingStatus == 1 || chargingStatus == 2 || chargingStatus == 4;
+                                bool full = chargingStatus == 3 || percent >= 100;
+                                return NamedResult(Result(percent, charging && percent < 100, full, false, Name,
+                                    "Logitech BatteryStatus · 设备索引 " + dev), shortHandle, longH, dev);
+                            }
+                        }
+                    }
+
+                    // Last resort: Battery Voltage 0x1001.
+                    featureIndex = BatteryFeature(shortHandle, longH, dev, BatteryVoltage);
+                    if (featureIndex > 0)
+                    {
+                        byte[] response = CallLong(shortHandle, longH, dev, (byte)featureIndex, 0x00, 0, 0, 0, 320);
+                        if (response != null && response.Length >= 7)
+                        {
+                            int millivolts = (response[4] << 8) | response[5];
+                            int? percent = VoltageToPercent(millivolts);
+                            if (percent.HasValue)
+                            {
+                                int flags = response[6];
+                                bool charging = (flags & 0x80) != 0;
+                                bool full = percent.Value >= 100 || (charging && (flags & 0x03) == 0x01);
+                                return NamedResult(Result(percent, charging && percent.Value < 100, full, false, Name,
+                                    "Logitech BatteryVoltage · 设备索引 " + dev + " · " + millivolts + " mV"), shortHandle, longH, dev);
+                            }
+                        }
+                    }
+
+                    Log.Debug("Logitech HID++ battery feature not found on device " + dev);
+                    return null;
                 }
             }
+        }
+
+        private static int? VoltageToPercent(int millivolts)
+        {
+            int[,] curve = new int[,]
+            {
+                { 4186, 100 }, { 4067, 90 }, { 3989, 80 }, { 3922, 70 },
+                { 3859, 60 }, { 3811, 50 }, { 3778, 40 }, { 3751, 30 },
+                { 3717, 20 }, { 3671, 10 }, { 3646, 5 }, { 3579, 2 }, { 3500, 0 }
+            };
+            if (millivolts >= curve[0, 0]) return curve[0, 1];
+            if (millivolts <= curve[curve.GetLength(0) - 1, 0]) return curve[curve.GetLength(0) - 1, 1];
+            for (int i = 0; i < curve.GetLength(0) - 1; i++)
+            {
+                int vHigh = curve[i, 0];
+                int pHigh = curve[i, 1];
+                int vLow = curve[i + 1, 0];
+                int pLow = curve[i + 1, 1];
+                if (millivolts <= vHigh && millivolts >= vLow)
+                {
+                    double value = pLow + (pHigh - pLow) * (millivolts - vLow) / (double)(vHigh - vLow);
+                    return (int)Math.Round(value);
+                }
+            }
+            return null;
         }
 
         private static byte ResolveDeviceIndex(HidHandle shortH, HidHandle longH)
@@ -1132,12 +1229,110 @@ namespace GearPower
             return 0;
         }
 
+        private static ProbeResult NamedResult(ProbeResult result, HidHandle shortH, HidHandle longH, byte dev)
+        {
+            if (result == null) return null;
+            string name = ReadDeviceName(shortH, longH, dev);
+            if (!string.IsNullOrEmpty(name)) result.ModelName = name;
+            return result;
+        }
+
+        private static string ReadDeviceName(HidHandle shortH, HidHandle longH, byte dev)
+        {
+            ushort[] features = new ushort[] { DeviceName, DeviceFriendlyName };
+            foreach (ushort feature in features)
+            {
+                int featureIndex = FeatureIndex(shortH, longH, dev, feature);
+                if (featureIndex <= 0) continue;
+
+                byte[] lengthReply = CallLong(shortH, longH, dev, (byte)featureIndex, 0x00, 0, 0, 0, 260);
+                if (lengthReply == null || lengthReply.Length < 5) continue;
+                int length = lengthReply[4];
+                if (length < 1 || length > 96) continue;
+
+                var name = new System.Text.StringBuilder();
+                for (int offset = 0; offset < length; offset += 16)
+                {
+                    byte[] chunk = CallLong(shortH, longH, dev, (byte)featureIndex, 0x01,
+                        (byte)offset, 0, 0, 260);
+                    if (chunk == null || chunk.Length < 5) break;
+
+                    var bytes = new List<byte>();
+                    for (int i = 4; i < chunk.Length; i++)
+                    {
+                        if (chunk[i] == 0) break;
+                        bytes.Add(chunk[i]);
+                    }
+                    if (bytes.Count == 0) break;
+                    name.Append(System.Text.Encoding.UTF8.GetString(bytes.ToArray()));
+                }
+
+                string value = name.ToString().Trim();
+                if (value.Length > 0) return value;
+            }
+            return null;
+        }
+
+        private static ProbeResult ReadLegacyBattery(HidHandle shortH, HidHandle longH, byte dev)
+        {
+            var request = new byte[7];
+            request[0] = ShortReport;
+            request[1] = dev;
+            request[2] = 0x81; // HID++ 1.0 GET_REGISTER
+            request[3] = 0x0D; // battery mileage
+            if (!shortH.Write(request, 280)) return null;
+
+            DateTime deadline = DateTime.UtcNow.AddMilliseconds(450);
+            while (DateTime.UtcNow < deadline)
+            {
+                byte[] response = shortH.Read(20, 90);
+                if (response != null && IsLegacyBatteryResponse(response, dev))
+                    return NamedResult(LegacyBatteryResult(response, dev), shortH, longH, dev);
+                if (longH != shortH)
+                {
+                    response = longH.Read(20, 90);
+                    if (response != null && IsLegacyBatteryResponse(response, dev))
+                    return NamedResult(LegacyBatteryResult(response, dev), shortH, longH, dev);
+                }
+            }
+            return null;
+        }
+
+        private static bool IsLegacyBatteryResponse(byte[] response, byte dev)
+        {
+            return response != null && response.Length >= 7 &&
+                   response[1] == dev && response[2] == 0x81 && response[3] == 0x0D;
+        }
+
+        private static ProbeResult LegacyBatteryResult(byte[] response, byte dev)
+        {
+            int percent = response[4];
+            if (percent < 0 || percent > 100) return null;
+            int status = response[6] >> 6;
+            bool charging = status == 1;
+            bool full = status == 2 || percent >= 100;
+            return Result(percent, charging && percent < 100, full, false,
+                "Logitech HID++ 1.0", "BatteryMileage · 设备索引 " + dev);
+        }
+
         private static int FeatureIndex(HidHandle shortH, HidHandle longH, byte dev, ushort featureId)
         {
-            byte[] response = Call(shortH, longH, dev, RootFeature, 0x00,
+            byte[] response = CallLong(shortH, longH, dev, RootFeature, 0x00,
                 (byte)(featureId >> 8), (byte)(featureId & 0xFF), 0, 220);
             if (response == null || response.Length < 5) return 0;
             return response[4];
+        }
+
+        private static int BatteryFeature(HidHandle shortH, HidHandle longH, byte dev, ushort featureId)
+        {
+            for (int attempt = 0; attempt < 2; attempt++)
+            {
+                int index = FeatureIndex(shortH, longH, dev, featureId);
+                if (index > 0) return index;
+                Call(shortH, longH, dev, RootFeature, 0x01, 0, 0, 0xAA, 220);
+                Thread.Sleep(180);
+            }
+            return 0;
         }
 
         private static byte[] Call(HidHandle shortH, HidHandle longH, byte dev, byte featureIndex, byte function, byte p0, byte p1, byte p2, int timeoutMs)
@@ -1161,6 +1356,34 @@ namespace GearPower
                 if (longH != shortH)
                 {
                     response = longH.Read(20, 90);
+                    if (response != null && IsMatch(response, dev, featureIndex, address)) return response;
+                }
+            }
+            return null;
+        }
+
+        private static byte[] CallLong(HidHandle shortH, HidHandle longH, byte dev, byte featureIndex, byte function, byte p0, byte p1, byte p2, int timeoutMs)
+        {
+            if (longH == null || longH == shortH) return null;
+            var request = new byte[20];
+            request[0] = LongReport;
+            request[1] = dev;
+            request[2] = featureIndex;
+            request[3] = (byte)((function << 4) | SoftwareId);
+            request[4] = p0;
+            request[5] = p1;
+            request[6] = p2;
+            if (!longH.Write(request, 250)) return null;
+
+            byte address = request[3];
+            DateTime deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+            while (DateTime.UtcNow < deadline)
+            {
+                byte[] response = longH.Read(20, 90);
+                if (response != null && IsMatch(response, dev, featureIndex, address)) return response;
+                if (shortH != longH)
+                {
+                    response = shortH.Read(20, 90);
                     if (response != null && IsMatch(response, dev, featureIndex, address)) return response;
                 }
             }

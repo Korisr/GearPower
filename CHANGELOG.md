@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.1.3-beta] - 2026-10-20
+
+### Fixes
+
+- 修复 Logitech C539 Lightspeed 接收器无法显示 G502 / G Pro Wireless 电量
+- Logitech 读取 HID++ Device Name 并显示真实鼠标型号，不再只显示接收器名称
+- Logitech 增加旧款 BatteryStatus / BatteryVoltage / HID++ 1.0 电量回退
+- Logitech HID++ 2.0 特性查询改用 20 字节长报告，并增加唤醒等待与重试
+- 修复低权限下点击「以管理员身份重启」时可能出现的「零的 Hwnd 无效」错误
+
 ## [1.1.2-beta] - 2026-10-19
 
 预发布测试版，新增 Razer BlackShark V2 Pro 2.4 耳机支持。

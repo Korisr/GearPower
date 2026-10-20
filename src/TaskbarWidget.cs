@@ -267,7 +267,11 @@ namespace GearPower
             hideTimer.Tick += (s, e) =>
             {
                 hideTimer.Stop();
-                if (!disposed) RefreshInternal(true);
+                if (!disposed)
+                {
+                    try { RefreshInternal(true); }
+                    catch (Exception ex) { Log.Debug("Taskbar hide refresh failed: " + ex.Message); }
+                }
             };
 
             winEventProc = OnForegroundChanged;
@@ -340,7 +344,15 @@ namespace GearPower
 
         public void Refresh()
         {
-            RefreshInternal(false);
+            try
+            {
+                RefreshInternal(false);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug("Taskbar refresh failed: " + ex.Message);
+                try { HideWindow(); } catch { }
+            }
         }
 
         private void RefreshInternal(bool forceHide)
@@ -441,9 +453,16 @@ namespace GearPower
                 {
                     window.Dispatcher.BeginInvoke(new Action(() =>
                     {
-                        if (disposed) return;
-                        ReassertTopmost();
-                        Refresh();
+                        try
+                        {
+                            if (disposed) return;
+                            ReassertTopmost();
+                            Refresh();
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Debug("Taskbar foreground callback failed: " + ex.Message);
+                        }
                     }));
                 }
             }
@@ -455,10 +474,17 @@ namespace GearPower
         private void ReassertTopmost()
         {
             if (window == null) return;
-            IntPtr handle = new WindowInteropHelper(window).Handle;
-            if (handle == IntPtr.Zero) return;
-            SetWindowPos(handle, new IntPtr(-1), 0, 0, 0, 0,
-                SwpNoMove | SwpNoSize | SwpNoActivate);
+            try
+            {
+                IntPtr handle = new WindowInteropHelper(window).Handle;
+                if (handle == IntPtr.Zero) return;
+                SetWindowPos(handle, new IntPtr(-1), 0, 0, 0, 0,
+                    SwpNoMove | SwpNoSize | SwpNoActivate);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug("Taskbar topmost failed: " + ex.Message);
+            }
         }
 
         private int Mode
@@ -481,6 +507,10 @@ namespace GearPower
             window.IsHitTestVisible = false;
             window.SizeToContent = SizeToContent.Manual;
             window.Height = 32;
+            window.Closed += (s, e) =>
+            {
+                if (ReferenceEquals(window, s)) window = null;
+            };
         }
 
         private Color ColorFor(DeviceReading reading)

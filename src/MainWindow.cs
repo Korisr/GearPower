@@ -86,6 +86,7 @@ namespace GearPower
         private readonly DispatcherTimer themeTimer;
         private TrayController tray;
         private bool exiting;
+        private bool restarting;
         private readonly bool lowIntegrity;
         private HwndSource hwndSource;
         private int refreshSeconds = 60;
@@ -439,10 +440,14 @@ namespace GearPower
 
         public void ActivateFromSecondInstance()
         {
-            if (window == null) return;
+            if (window == null || exiting || restarting) return;
             try
             {
-                window.Dispatcher.BeginInvoke(new Action(ShowMainWindow));
+                window.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    if (exiting || restarting) return;
+                    ShowMainWindow();
+                }));
             }
             catch
             {
@@ -451,12 +456,20 @@ namespace GearPower
 
         private void ShowMainWindow()
         {
-            window.Show();
-            if (window.WindowState == WindowState.Minimized) window.WindowState = WindowState.Normal;
-            window.Activate();
-            window.Topmost = true;
-            window.Topmost = false;
-            window.Focus();
+            if (window == null || exiting) return;
+            try
+            {
+                window.Show();
+                if (window.WindowState == WindowState.Minimized) window.WindowState = WindowState.Normal;
+                window.Activate();
+                window.Topmost = true;
+                window.Topmost = false;
+                window.Focus();
+            }
+            catch (Exception ex)
+            {
+                Log.Debug("Show main window failed: " + ex.Message);
+            }
         }
 
         private void HideToTray()
@@ -468,6 +481,7 @@ namespace GearPower
 
         private bool RestartAsAdministrator()
         {
+            restarting = true;
             bool released = SingleInstance.ReleaseForRestart();
             try
             {
@@ -495,6 +509,7 @@ namespace GearPower
             }
             catch (Win32Exception ex)
             {
+                restarting = false;
                 if (released) SingleInstance.ReacquireAfterFailedRestart();
                 if (ex.NativeErrorCode == 1223)
                 {
@@ -509,6 +524,7 @@ namespace GearPower
             }
             catch (Exception ex)
             {
+                restarting = false;
                 if (released) SingleInstance.ReacquireAfterFailedRestart();
                 Log.Error("Administrator restart failed: " + ex);
                 ShowToast("无法以管理员身份重启");
@@ -518,14 +534,48 @@ namespace GearPower
 
         private void ExitApplication()
         {
+            if (exiting) return;
             exiting = true;
-            if (tray != null)
+            try
             {
-                tray.Dispose();
-                tray = null;
+                if (tray != null)
+                {
+                    tray.Dispose();
+                    tray = null;
+                }
             }
-            window.Close();
-            if (Application.Current != null) Application.Current.Shutdown();
+            catch (Exception ex)
+            {
+                Log.Debug("Tray dispose during exit failed: " + ex.Message);
+            }
+            try
+            {
+                if (taskbarWidget != null)
+                {
+                    taskbarWidget.Dispose();
+                    taskbarWidget = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug("Taskbar dispose during exit failed: " + ex.Message);
+            }
+            try
+            {
+                if (window != null) window.Close();
+            }
+            catch (Exception ex)
+            {
+                Log.Debug("Window close during exit failed: " + ex.Message);
+            }
+            try
+            {
+                if (Application.Current != null) Application.Current.Shutdown();
+            }
+            catch (Exception ex)
+            {
+                Log.Debug("Application shutdown failed: " + ex.Message);
+            }
         }
 
         public void PrepareSystemExit()
