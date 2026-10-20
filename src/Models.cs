@@ -208,6 +208,7 @@ namespace GearPower
             Add(m, 0x1532, 0x00D1, "Razer Pro Click V2", DeviceKind.Mouse, true);
             Add(m, 0x1532, 0x00D0, "Razer Pro Click V2", DeviceKind.Mouse, false);
             Add(m, 0x1532, 0x0555, "Razer BlackShark V2 Pro 2.4", DeviceKind.Headset, true);
+            Add(m, 0x0B05, 0x193E, "ASUS ROG Falchion", DeviceKind.Keyboard, false);
 
             return m;
         }

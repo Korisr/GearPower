@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.4-beta] - 2026-10-20
+
+### Features
+
+- 新增 ASUS ROG Falchion（`0B05:193E`）65 字节 OUT/IN 电量回退
+- Razer DeathAdder V3 Pro（`1532:00B7`）继续使用既有 Razer 90 字节特性报告协议
+
 ## [1.1.3-beta] - 2026-10-20
 
 ### Fixes

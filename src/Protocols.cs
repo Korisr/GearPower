@@ -156,6 +156,28 @@ namespace GearPower
                     return Result(percent, charging, full, false, Name, "ASUS 0x12/0x07 · 报告 ID " + reportId);
                 }
             }
+
+            // Some keyboards (for example the ROG Falchion) expose the
+            // vendor collection as 65-byte OUT/IN reports instead of a
+            // feature report. Use the same command over the output report.
+            var outputCandidates = group.Interfaces
+                .Where(i => i.OutputLength >= 6 && i.UsagePage >= 0xFF00)
+                .OrderByDescending(i => i.OutputLength)
+                .ToList();
+            foreach (HidInterfaceInfo iface in outputCandidates)
+            {
+                foreach (byte reportId in new byte[] { 0x00, 0x02, 0x05 })
+                {
+                    byte[] response;
+                    if (!TransactOutput(iface, BuildRequest(iface.OutputLength, reportId), out response)) continue;
+                    bool charging;
+                    bool full;
+                    int? percent = ParseBattery(response, out charging, out full);
+                    if (!percent.HasValue) continue;
+                    return Result(percent, charging, full, false, Name,
+                        "ASUS 0x12/0x07 · OUT 报告 ID " + reportId);
+                }
+            }
             return null;
         }
 
@@ -196,6 +218,29 @@ namespace GearPower
                 if (!handle.GetFeature(buffer)) return false;
                 response = buffer;
                 return true;
+            }
+        }
+
+        private static bool TransactOutput(HidInterfaceInfo iface, byte[] request, out byte[] response)
+        {
+            response = null;
+            string error;
+            using (HidHandle handle = HidHandle.Open(iface.Path, true, out error))
+            {
+                if (handle == null) return false;
+                bool sent = handle.Write(request, 500);
+                if (!sent) sent = handle.SetOutputReport(request);
+                if (!sent) return false;
+                Thread.Sleep(160);
+                int readLength = Math.Max(request.Length, iface.InputLength);
+                if (readLength < 6) readLength = 6;
+                response = handle.Read(readLength, 500);
+                if (response == null)
+                {
+                    var buffer = new byte[readLength];
+                    if (handle.GetInputReport(buffer)) response = buffer;
+                }
+                return response != null;
             }
         }
     }
