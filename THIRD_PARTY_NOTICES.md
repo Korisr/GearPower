@@ -29,3 +29,23 @@ endorsed by any of them.
 
 If you are a rights holder and believe an attribution is missing or incorrect,
 please open an issue and it will be corrected.
+
+## Apple rechargeable keyboard battery report reference
+
+Read-only Input report `0x90` (battery percentage in byte 2) was independently
+implemented using the protocol behavior documented by:
+
+- https://github.com/gozaltech/mkBatteryChecker
+- https://github.com/fixtan/MagicKeyBattery
+
+No source code from those projects was copied. Only Apple keyboard product IDs
+`0267` and `026C` are enabled. Local hardware verification: `004C:026C` returned
+85% over Bluetooth using
+Input `0x90` after Magic Utilities was uninstalled and the Apple `KeyMagic2`
+driver restored. With the Magic Utilities filter active, the same query
+failed; that case remains visible with an unknown level and diagnostics.
+
+Windows battery property decoding follows Microsoft's DEVPROPERTY type values:
+https://learn.microsoft.com/en-us/windows-hardware/drivers/install/devproperty
+The HFP battery node and BYTE value (90%) were verified locally on a HUAWEI
+FreeBuds Pro 2; no third-party source code was copied for this implementation.

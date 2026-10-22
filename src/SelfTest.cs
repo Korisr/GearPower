@@ -30,6 +30,42 @@ namespace GearPower
 
             try
             {
+                check("bluetooth byte battery 90", WindowsBatteryProperty.Parse(3, new byte[] { 90 }) == 90);
+                check("bluetooth zero battery retained", WindowsBatteryProperty.Parse(3, new byte[] { 0 }) == 0);
+                check("bluetooth full battery retained", WindowsBatteryProperty.Parse(3, new byte[] { 100 }) == 100);
+                check("bluetooth byte outside percent rejected", !WindowsBatteryProperty.Parse(3, new byte[] { 101 }).HasValue);
+                check("bluetooth uint32 battery", WindowsBatteryProperty.Parse(7, BitConverter.GetBytes((uint)90)) == 90);
+                check("bluetooth uint16 battery", WindowsBatteryProperty.Parse(5, BitConverter.GetBytes((ushort)90)) == 90);
+                check("bluetooth signed negative rejected", !WindowsBatteryProperty.Parse(6, BitConverter.GetBytes(-1)).HasValue);
+                check("bluetooth truncated uint32 rejected", !WindowsBatteryProperty.Parse(7, new byte[] { 90 }).HasValue);
+                check("bluetooth service GUID rejected", !WindowsBatteryProperty.Parse(13, new byte[16]).HasValue);
+                check("bluetooth boolean not a level", !WindowsBatteryProperty.Parse(17, new byte[] { 1 }).HasValue);
+                check("bluetooth security descriptor not a level", !WindowsBatteryProperty.Parse(19, new byte[4]).HasValue);
+                check("bluetooth unicode percent", WindowsBatteryProperty.Parse(18, Encoding.Unicode.GetBytes("90%\0")) == 90);
+                check("bluetooth odd unicode buffer rejected", !WindowsBatteryProperty.Parse(18, new byte[] { 90 }).HasValue);
+                check("bluetooth missing data rejected", !WindowsBatteryProperty.Parse(3, null).HasValue);
+                check("bluetooth HFP node included", WindowsBatteryProperty.IsBluetoothInstance("BTHENUM\\HFP_SERVICE"));
+                check("bluetooth handsfree child included", WindowsBatteryProperty.IsBluetoothInstance("BTHHFENUM\\BTHHFPAUDIO"));
+                check("bluetooth LE node included", WindowsBatteryProperty.IsBluetoothInstance("BTHLEDEVICE\\TEST"));
+                check("non-bluetooth battery node excluded", !WindowsBatteryProperty.IsBluetoothInstance("ACPI\\PNP0C0A"));
+                check("HFP service recognized as headset", WindowsBatteryProperty.IsAudioInstance("BTHENUM\\{0000111e-0000-1000-8000-00805f9b34fb}"));
+                check("A2DP sink recognized as headset", WindowsBatteryProperty.IsAudioInstance("BTHENUM\\{0000110b-0000-1000-8000-00805f9b34fb}"));
+                check("HID service not an audio device", !WindowsBatteryProperty.IsAudioInstance("BTHENUM\\{00001124-0000-1000-8000-00805f9b34fb}"));
+                check("apple input90 level", AppleKeyboardProtocol.ParseBattery(new byte[] { 0x90, 0, 85 }) == 85);
+                check("apple empty battery remains zero", AppleKeyboardProtocol.ParseBattery(new byte[] { 0x90, 0, 0 }) == 0);
+                check("apple rejects wrong report", !AppleKeyboardProtocol.ParseBattery(new byte[] { 0x47, 0, 85 }).HasValue);
+                check("apple rejects invalid level", !AppleKeyboardProtocol.ParseBattery(new byte[] { 0x90, 0, 255 }).HasValue);
+                check("apple rejects truncated report", !AppleKeyboardProtocol.ParseBattery(new byte[] { 0x90, 85 }).HasValue);
+                var appleGroup = new DeviceGroup();
+                appleGroup.Interfaces.Add(new HidInterfaceInfo { Vid = 0x004C, Pid = 0x026C });
+                check("apple matches bluetooth numeric keyboard", new AppleKeyboardProtocol().Matches(appleGroup));
+                appleGroup.Interfaces[0].Vid = 0x05AC;
+                check("apple matches USB numeric keyboard", new AppleKeyboardProtocol().Matches(appleGroup));
+                appleGroup.Interfaces[0].Pid = 0x0340;
+                check("apple excludes built-in keyboard", !new AppleKeyboardProtocol().Matches(appleGroup));
+                appleGroup.Interfaces[0].Vid = 0x046D;
+                appleGroup.Interfaces[0].Pid = 0x026C;
+                check("apple excludes other vendors", !new AppleKeyboardProtocol().Matches(appleGroup));
                 byte[] descriptor =
                 {
                     0x05, 0x06, 0x09, 0x01, 0x15, 0x00, 0x25, 0x64, 0x75, 0x08, 0x95, 0x01, 0x85, 0x03, 0xB1, 0x02,
