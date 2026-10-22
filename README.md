@@ -19,7 +19,9 @@ Windows 10/11 · .NET Framework 4.8 · 单文件 · 本地读取，不联网
 - **接收器在线也能看到设备**：设备关机或休眠时保留卡片，显示「设备休眠」，唤醒后刷新即可。
 - **休眠保留上次电量**：设备进入休眠后会继续显示最后一次成功读取的电量和时间，并用淡色环 +「上次读数」标注；缓存保留 30 天。
 - **历史设备**：连接过本机的设备会保留卡片并标记「未连接」；未连接卡片可单独删除，历史不会进入托盘或任务栏。数据保存在 `%LOCALAPPDATA%\GearPower\device-history.tsv`。
-- **设备清单**：列出所有 HID 接口的 VID/PID、用途页、接口号、报告长度与字段；点击任意一行可复制该设备的诊断信息。
+- **设备清单**：按键盘、鼠标、耳机、麦克风、拓展坞等类型分组，同一物理设备的多接口合并；每个设备组可复制「诊断」或「复制给 Agent」，点击单个接口行可复制该接口诊断。
+- **设备适配**：新增「设备适配」页签，可从已连接接口生成 JSON 草稿、编辑、测试、导入启用、导出和移除；配置支持声明式查询、校验和、字段位解析和条件。
+- **实时日志**：设置页「实时日志」窗口显示最近 1000 行，可刷新、清空、导出。
 - **自动刷新**：30 秒 / 60 秒 / 5 分钟 / 关闭，在「设置」页调整，保存在注册表。
 - **浅色 / 深色 / 跟随系统**：在「设置 → 外观」切换，跟随系统时会在 Windows 切换白天/黑夜后自动更新。
 - **强调色**：绿色 / 粉色 / 黄色 / 蓝色四套强调色，浅色和深色主题各有对应色值。
@@ -31,14 +33,14 @@ Windows 10/11 · .NET Framework 4.8 · 单文件 · 本地读取，不联网
 
 ## 下载
 
-从 [Releases](../../releases/latest) 下载最新的 `GearPower.exe`，双击运行，无需安装。
+从 [Releases](../../releases/latest) 下载最新的 `GearPower.exe`，双击运行，无需安装。若要使用随附设备配置，请把 `profiles/` 文件夹放在 exe 同目录；用户配置也可以直接在「设备适配」页导入。
 
 > 仓库不提交 `dist/` 和生成的 exe，构建产物由 GitHub Actions 或本地 `build.ps1` 生成。
 > exe 未做代码签名，SmartScreen 可能提示未知发布者；可核对 Release 中的 SHA256，或按「构建」一节自行编译。
 
 ## 快速开始
 
-1. 运行 `GearPower.exe`（单文件，无需安装）。
+1. 运行 `GearPower.exe`（无需安装；需要随附配置时把 `profiles/` 放在同目录）。
 2. 插好 2.4G 接收器，打开鼠标/耳机电源。
 3. 等待约 1 秒自动扫描；按 **F5** 或点右上角刷新。
 4. 读不到时，切到「设备清单」，点「复制诊断信息」。
@@ -49,7 +51,7 @@ Windows 10/11 · .NET Framework 4.8 · 单文件 · 本地读取，不联网
 
 ## 设置
 
-顶部「设置」页集中管理外观、刷新、托盘和工具，主界面只保留「电量 / 设备清单 / 设置」三个页签和刷新按钮：
+顶部「设置」页集中管理外观、刷新、托盘和工具，主界面保留「电量 / 设备清单 / 设备适配 / 设置」四个页签和刷新按钮：
 
 ![设置页](assets/screenshot-settings.png)
 
@@ -64,9 +66,100 @@ Windows 10/11 · .NET Framework 4.8 · 单文件 · 本地读取，不联网
 ![任务栏电量条](assets/screenshot-taskbar.png)
 
 任务栏条是独立的置顶、点击穿透窗口，不注入 Explorer，也不是真正的任务栏子窗口；因此窗口布局变化时会在 3 秒内自动跟随。徽标靠左时目前采用安全隐藏，不覆盖应用按钮；后续可以用更可靠的任务栏按钮边界实现右侧放置。
-- **工具**：打开文件夹、打开日志、托盘帮助、以管理员身份重启、退出程序。
+- **工具**：打开文件夹、打开日志、实时日志、托盘帮助、以管理员身份重启、退出程序。
 
 ![浅色主题](assets/screenshot-light.png)
+
+## 设备适配
+
+「设备适配」页用于为尚未内置协议、但能确认查询报文的厂商 HID 设备增加电量读取：
+
+- 从已连接接口生成草稿，自动填写 VID/PID、Usage 和三个报告长度
+- 支持 `output`、`feature`、`featureQuery`、`input` 四种读取方式
+- 支持 sum8 / xor8 校验、前缀匹配、字段 mask/shift、大小端和条件
+- 保存前严格校验 JSON，未知字段、越界偏移和错误长度都会拒绝
+- 用户配置位于 `%LOCALAPPDATA%\GearPower\profiles\<id>.json`
+- 随附示例位于 exe 旁的 `profiles/`；同 id 用户配置优先
+- 每次扫描重新加载配置，导入或移除后自动重新扫描
+- JSON 只能描述 HID 查询和数值解析，不支持执行脚本、DLL 或外部程序
+
+### 使用步骤
+
+1. **确认设备**：在「设备清单」找到目标设备，确认它暴露了厂商 Usage Page（`FF00–FFFF`）以及 OUT/IN 或 Feature 报告；标准键盘/鼠标接口通常没有可用的私有电量命令。
+2. **打开设备适配**：顶部页签选择「设备适配」。左侧是已加载配置，右侧是 JSON 编辑器。
+3. **选择接口**：在右上方下拉框选择目标厂商接口。下拉框只列出厂商 Usage Page 的接口。
+4. **生成草稿**：点「从接口生成草稿」。VID/PID、Usage、报告长度会自动填入；这只是一个可编辑骨架，不代表已知电量协议。
+5. **填写查询**：根据厂商协议、抓包或公开驱动填写 `request`、`response.prefix`、`percent.offset`，必要时填写校验和、`require` 条件、充电/满电字段。
+6. **测试**：点「测试当前配置」。输出区会显示 TX/RX 和解析结果；测试不会自动保存。建议先退出厂商驱动（如 Razer Synapse、G HUB、MCHOSE HUB），避免接口争用。
+7. **导入启用**：确认测试读到合理电量后，点「导入并启用」。配置保存到用户目录并触发重新扫描。
+8. **验证**：回到「电量」页确认卡片、托盘和任务栏使用新配置；需要分享时用「导出 JSON」，需要撤销时用「移除用户配置」。
+
+### 最小 JSON 示例
+
+```json
+{
+  "schemaVersion": 1,
+  "id": "my-device",
+  "name": "我的设备",
+  "vendor": "VENDOR",
+  "kind": "mouse",
+  "enabled": true,
+  "priority": 100,
+  "matches": [
+    {
+      "vid": "1234",
+      "pid": "5678",
+      "usagePage": "FF01",
+      "usage": "0001",
+      "inputLength": 64,
+      "outputLength": 64,
+      "featureLength": 0
+    }
+  ],
+  "steps": [
+    {
+      "id": "battery",
+      "method": "output",
+      "request": "11 04",
+      "attempts": 2,
+      "timeoutMs": 400,
+      "response": {
+        "length": 64,
+        "prefix": "11 04"
+      }
+    }
+  ],
+  "result": {
+    "percent": { "step": "battery", "offset": 5 }
+  }
+}
+```
+
+完整字段、校验和、条件、`featureQuery` 和内置协议引用见 [DEVICE_PROFILES.md](DEVICE_PROFILES.md)。
+
+### 字段速查
+
+| 字段 | 说明 |
+|---|---|
+| `vid` / `pid` / `usagePage` / `usage` | 1–4 位十六进制；Usage 必须和接口描述符一致 |
+| `inputLength` / `outputLength` / `featureLength` | 三个报告长度，`0` 表示没有该报告 |
+| `method` | `output`、`feature`、`featureQuery` 或 `input` |
+| `request` | 包含 Report ID 的十六进制字节；短于接口长度时补零 |
+| `response.length` | 必须等于输入或 Feature 报告长度 |
+| `response.prefix` | 用于识别正确响应，防止把其他报告当电量 |
+| `checksum` | `sum8` 或 `xor8`，`start` + `count` 计算，`offset` 存放结果 |
+| `percent.offset` | 从 0 开始，包含 Report ID |
+| `mask` / `shift` / `endian` | 提取位字段和大小端 |
+| `scale` / `add` | 电量 = 原始值 × scale + add |
+| `percentUnavailableWhen` | 条件满足时不采信电量，但仍可显示充电状态 |
+
+### 安全与排错
+
+- **没有协议资料或真实抓包时，不要根据 HID 描述符猜查询命令**；保持 `enabled: false`。
+- 首次测试使用读命令，不要发送写入、配网、复位或升级命令。
+- 读不到时先看「设置 → 工具 → 实时日志」和测试输出的 TX/RX；确认前缀、长度、Report ID 和校验范围。
+- 设备休眠时先按键唤醒；接收器在线但设备未唤醒不会返回电量。
+- 配置错误不会破坏已有内置协议；删除用户配置后会恢复同 id 的随附配置。
 
 ![深色主题](assets/screenshot-dark.png)
 
@@ -178,7 +271,7 @@ GearPower.exe --tray-preview  生成托盘电池预览图
 
 ## 构建
 
-当前版本：**1.1.5-beta**。需要 Windows 10/11 自带的 .NET Framework 4.8 与 `csc.exe`（无需 Visual Studio / .NET SDK）。
+当前版本：**1.2.0-beta**。需要 Windows 10/11 自带的 .NET Framework 4.8 与 `csc.exe`（无需 Visual Studio / .NET SDK）。
 
 ```powershell
 git clone https://github.com/XAVIER0229/GearPower.git
@@ -204,6 +297,14 @@ src/
   Descriptor.cs     HID 报告描述符解析（自检与诊断）
   Protocols.cs      各厂商电量协议
   Scanner.cs        设备分组、探测、设备清单
+  InventoryGroups.cs 设备清单按类型/物理设备分组
+  DeviceProfiles.cs JSON 设备配置模型、校验和格式化
+  ProfileStore.cs   用户/随附配置加载、导入和移除
+  ProfileRunner.cs  声明式查询执行和字段解析
+  DeviceProfileView.cs 设备适配页
+  DeviceAgentPrompt.cs 复制给 Agent 的提示词
+  RecentLogBuffer.cs 最近 1000 行日志缓冲
+  LogWindow.cs      实时日志窗口
   MainWindow.cs     WPF 界面逻辑、自绘标题栏与主题菜单
   BatteryRing.cs    环形电量控件
   BatteryCache.cs   休眠设备的上次电量缓存
@@ -222,6 +323,8 @@ src/
   AssemblyInfo.cs   版本与文件属性
 ui.xaml             界面布局与样式
 assets/app.ico      应用图标
+profiles/           随附设备配置示例
+DEVICE_PROFILES.md  设备配置格式说明
 app.manifest        DPI / 权限清单
 ```
 
@@ -266,7 +369,7 @@ Razer、ASUS ROG、HyperX、ATK、VXE、Lamzu、Logitech 等名称和商标归�
 
 ## 版本
 
-当前公开版本 **1.1.5-beta**，变更见 [CHANGELOG.md](CHANGELOG.md)。
+当前公开版本 **1.2.0-beta**，变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## License
 

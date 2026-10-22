@@ -303,6 +303,8 @@
                     Background="{DynamicResource TabActiveBrush}" Foreground="{DynamicResource TabActiveForegroundBrush}"/>
             <Button x:Name="DeviceTab" Style="{StaticResource TabButton}" Content="设备清单"
                     Foreground="{DynamicResource TabInactiveForegroundBrush}" Margin="2,0,0,0"/>
+            <Button x:Name="ProfileTab" Style="{StaticResource TabButton}" Content="设备适配"
+                    Foreground="{DynamicResource TabInactiveForegroundBrush}" Margin="2,0,0,0"/>
             <Button x:Name="SettingsTab" Style="{StaticResource TabButton}" Content="设置"
                     Foreground="{DynamicResource TabInactiveForegroundBrush}" Margin="2,0,0,0"/>
           </StackPanel>
@@ -440,6 +442,11 @@
               </Grid>
             </Border>
           </Grid>
+        </Border>
+
+        <Border x:Name="ProfileView" Visibility="Collapsed" Background="{DynamicResource SummaryBrush}"
+                BorderBrush="{DynamicResource SummaryBorderBrush}" BorderThickness="1" CornerRadius="16" Padding="0">
+          <Grid x:Name="ProfileHost"/>
         </Border>
 
         <Border x:Name="SettingsView" Visibility="Collapsed" Background="{DynamicResource SummaryBrush}"
@@ -621,6 +628,8 @@
                     <Button x:Name="SettingsFolderButton" Style="{StaticResource GhostButton}" Content="打开文件夹"
                             Padding="12,6" FontSize="10.5"/>
                     <Button x:Name="SettingsLogButton" Style="{StaticResource GhostButton}" Content="打开日志"
+                            Padding="12,6" FontSize="10.5" Margin="6,0,0,0"/>
+                    <Button x:Name="SettingsLiveLogButton" Style="{StaticResource GhostButton}" Content="实时日志"
                             Padding="12,6" FontSize="10.5" Margin="6,0,0,0"/>
                     <Button x:Name="SettingsTrayHelpButton" Style="{StaticResource GhostButton}" Content="托盘帮助"
                             Padding="12,6" FontSize="10.5" Margin="6,0,0,0"/>

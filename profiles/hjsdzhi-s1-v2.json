@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "id": "hjsdzhi-s1-v2",
+  "name": "HJSDZHI S1-V2",
+  "vendor": "HJSDZHI / YJX",
+  "kind": "mouse",
+  "enabled": true,
+  "priority": 100,
+  "matches": [
+    {
+      "vid": "A8A5",
+      "pid": "2255",
+      "usagePage": "FF01",
+      "usage": "0010",
+      "inputLength": 64,
+      "outputLength": 64,
+      "featureLength": 0,
+      "transport": "wireless"
+    },
+    {
+      "vid": "A8A4",
+      "pid": "2255",
+      "usagePage": "FF01",
+      "usage": "0010",
+      "inputLength": 64,
+      "outputLength": 64,
+      "featureLength": 0,
+      "transport": "wired"
+    }
+  ],
+  "steps": [
+    {
+      "id": "online",
+      "method": "output",
+      "whenVid": "A8A5",
+      "request": "F0 ED 01",
+      "attempts": 2,
+      "timeoutMs": 400,
+      "response": {
+        "length": 64,
+        "prefix": "F0 ED 01",
+        "checksum": {
+          "algorithm": "sum8",
+          "start": 4,
+          "count": 60,
+          "offset": 3
+        }
+      },
+      "require": [
+        {
+          "offset": 8,
+          "values": [2]
+        }
+      ],
+      "failureNote": "接收器在线，无线鼠标未连接或未唤醒"
+    },
+    {
+      "id": "battery",
+      "method": "output",
+      "request": "F0 30 01 00 2E",
+      "attempts": 2,
+      "timeoutMs": 400,
+      "response": {
+        "length": 64,
+        "prefix": "F0 30 01",
+        "checksum": {
+          "algorithm": "sum8",
+          "start": 4,
+          "count": 60,
+          "offset": 3
+        }
+      },
+      "failureNote": "鼠标电量暂未响应，请唤醒后刷新"
+    }
+  ],
+  "result": {
+    "percent": {
+      "step": "battery",
+      "offset": 8
+    },
+    "note": "通过设备配置读取 · 充电状态未确认"
+  }
+}

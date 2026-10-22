@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0-beta] - 2026-10-22
+
+### Features
+
+- 新增「设备适配」页签：接口生成草稿、JSON 编辑、测试、导入启用、导出、移除
+- 新增声明式设备配置引擎：output / feature / featureQuery / input、sum8/xor8 校验、字段位解析和条件
+- 用户配置位于 `%LOCALAPPDATA%\GearPower\profiles`，支持热加载和同 id 覆盖
+- 设备清单按键盘、鼠标、耳机、麦克风、拓展坞等分组，同一物理设备多接口合并，支持复制诊断和复制给 Agent
+- 修正 HM HUB / HM HubX 为拓展坞、NINX NX60 为键盘、Razer Seiren 为麦克风
+- 设置页新增「实时日志」窗口，显示最近 1000 行，可刷新、清空、导出
+- 随附 HJSDZHI S1-V2、LEOBOG HI98PRO 两份示例配置
+
 ## [1.1.5-beta] - 2026-10-20
 
 ### Fixes

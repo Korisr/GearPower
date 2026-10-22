@@ -7,6 +7,7 @@ namespace GearPower
     public static class Log
     {
         private static readonly object Gate = new object();
+        public static readonly RecentLogBuffer Recent = new RecentLogBuffer();
         private static string DirectoryPath;
         private static string FilePath;
         private static string InitError;
@@ -53,6 +54,7 @@ namespace GearPower
                     File.AppendAllText(file, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + " [INFO] log started" + Environment.NewLine, Encoding.UTF8);
                     DirectoryPath = candidate;
                     FilePath = file;
+                    Recent.Append(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + " [INFO] log started");
                     return;
                 }
                 catch (Exception ex)
@@ -94,14 +96,14 @@ namespace GearPower
 
         private static void Write(string level, string message)
         {
+            string line = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + " [" + level + "] " + message;
+            Recent.Append(line);
             if (FilePath == null) return;
             try
             {
                 lock (Gate)
                 {
-                    File.AppendAllText(FilePath,
-                        DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + " [" + level + "] " + message + Environment.NewLine,
-                        Encoding.UTF8);
+                    File.AppendAllText(FilePath, line + Environment.NewLine, Encoding.UTF8);
                 }
             }
             catch

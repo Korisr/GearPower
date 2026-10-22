@@ -91,6 +91,12 @@ namespace GearPower
 
         public static ProbeResult Probe(DeviceGroup group)
         {
+            ProbeResult custom = ProfileRunner.TryProbe(group);
+            if (custom != null)
+            {
+                if (string.IsNullOrEmpty(custom.ModelName)) custom.ModelName = group.Name;
+                return custom;
+            }
             foreach (HidProtocol protocol in Protocols)
             {
                 try

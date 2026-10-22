@@ -11,6 +11,8 @@ namespace GearPower
         Headset,
         Controller,
         Speaker,
+        Microphone,
+        Dock,
         Other
     }
 
@@ -79,6 +81,7 @@ namespace GearPower
         public string Protocol;
         public string Note;
         public string ModelName;
+        public DeviceKind? Kind;
     }
 
     public sealed class KnownModel
@@ -106,6 +109,8 @@ namespace GearPower
                 case DeviceKind.Headset: return "耳机";
                 case DeviceKind.Controller: return "手柄";
                 case DeviceKind.Speaker: return "音箱";
+                case DeviceKind.Microphone: return "麦克风";
+                case DeviceKind.Dock: return "拓展坞";
                 default: return "设备";
             }
         }
@@ -119,6 +124,8 @@ namespace GearPower
                 case DeviceKind.Headset: return "\uE7F6";
                 case DeviceKind.Controller: return "\uE7FC";
                 case DeviceKind.Speaker: return "\uE7F6";
+                case DeviceKind.Microphone: return "\uE720";
+                case DeviceKind.Dock: return "\uE8B7";
                 default: return "\uE83F";
             }
         }
@@ -208,7 +215,11 @@ namespace GearPower
             Add(m, 0x1532, 0x00D1, "Razer Pro Click V2", DeviceKind.Mouse, true);
             Add(m, 0x1532, 0x00D0, "Razer Pro Click V2", DeviceKind.Mouse, false);
             Add(m, 0x1532, 0x0555, "Razer BlackShark V2 Pro 2.4", DeviceKind.Headset, true);
+            Add(m, 0x1532, 0x056A, "Razer Seiren V3 Mini", DeviceKind.Microphone, false);
             Add(m, 0x0B05, 0x193E, "ASUS ROG Falchion", DeviceKind.Keyboard, false);
+            Add(m, 0xCAFE, 0x910B, "NINX NX60 ANSI", DeviceKind.Keyboard, false);
+            Add(m, 0xC019, 0x0401, "HM HUB", DeviceKind.Dock, false);
+            Add(m, 0xC019, 0xB300, "HM HubX", DeviceKind.Dock, false);
 
             return m;
         }
@@ -251,6 +262,9 @@ namespace GearPower
                 case 0x1D57: return "Attack Shark";
                 case 0x5253: return "MCHOSE";
                 case 0x3837: return "MCHOSE";
+                case 0x291D: return "MCHOSE";
+                case 0xC019: return "HM";
+                case 0xCAFE: return "NINX";
                 case 0x1956: return "A4Tech Bloody";
                 default: return "未知厂商";
             }
@@ -289,12 +303,18 @@ namespace GearPower
         {
             if (string.IsNullOrEmpty(name)) return DeviceKind.Other;
             string n = name.ToLowerInvariant();
+            if (n.Contains("microphone") || n.Contains("麦克风") || n.Contains("seiren"))
+                return DeviceKind.Microphone;
+            if (n.Contains("dock") || n.Contains("docking") || n.Contains("拓展坞") || n.Contains("扩展坞")
+                || n.Contains("hm hub") || n.Contains("hubx") || n.Contains("hub"))
+                return DeviceKind.Dock;
             if (n.Contains("headset") || n.Contains("headphone") || n.Contains("earbud") || n.Contains("earphone")
                 || n.Contains("cloud alpha") || n.Contains("cloud iii") || n.Contains("cloud ii")
                 || n.Contains("delta") || n.Contains("cetra") || n.Contains("pelta") || n.Contains("clavis")
                 || n.Contains("blackshark") || n.Contains("kraken") || n.Contains("barracuda"))
                 return DeviceKind.Headset;
-            if (n.Contains("keyboard") || n.Contains("keychron") || n.Contains("键盘")) return DeviceKind.Keyboard;
+            if (n.Contains("keyboard") || n.Contains("keychron") || n.Contains("键盘")
+                || n.Contains("nx60") || n.Contains("ninx")) return DeviceKind.Keyboard;
             if (n.Contains("mouse") || n.Contains("鼠标") || n.Contains("mice")) return DeviceKind.Mouse;
             if (n.Contains("gamepad") || n.Contains("controller") || n.Contains("手柄")) return DeviceKind.Controller;
             if (n.Contains("speaker") || n.Contains("soundbar") || n.Contains("音箱")) return DeviceKind.Speaker;

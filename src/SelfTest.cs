@@ -166,6 +166,29 @@ namespace GearPower
                 check("known model name", L10n.DisplayName(0x373B, 0x1031, "USB Receiver") == "ATK F1 Ultimate");
                 check("headset kind by name", L10n.KindFromName("HyperX Cloud III Wireless") == DeviceKind.Headset);
                 check("generic name detection", L10n.IsGenericName("2.4G Wireless Receiver"));
+                check("dock kind by name", L10n.KindFromName("HM HUB") == DeviceKind.Dock);
+                check("keyboard kind by model", L10n.KindFromName("NINX_NX60ANSI") == DeviceKind.Keyboard);
+                check("microphone kind by name", L10n.KindFromName("Razer Seiren V3 Mini") == DeviceKind.Microphone);
+                check("known dock model", KnownDevices.Find(0xC019, 0xB300) != null &&
+                    KnownDevices.Find(0xC019, 0xB300).Kind == DeviceKind.Dock);
+                string profilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "profiles", "hjsdzhi-s1-v2.json");
+                check("profile preset exists", File.Exists(profilePath));
+                if (File.Exists(profilePath))
+                {
+                    DeviceProfile profile = ProfileJson.Parse(File.ReadAllText(profilePath, Encoding.UTF8));
+                    check("profile preset parses", profile.id == "hjsdzhi-s1-v2" && profile.matches.Length == 2);
+                    DeviceProfile roundtrip = ProfileJson.Parse(ProfileJson.Pretty(profile));
+                    check("profile roundtrip", roundtrip.id == profile.id && roundtrip.steps.Length == 2);
+                }
+                try
+                {
+                    ProfileJson.Parse("{\"schemaVersion\":1,\"id\":\"bad\",\"name\":\"bad\",\"unknown\":1}");
+                    check("profile rejects unknown fields", false);
+                }
+                catch (FormatException)
+                {
+                    check("profile rejects unknown fields", true);
+                }
                 check("empty descriptor is safe", HidReportDescriptor.Parse(new byte[0]).Fields.Count == 0);
                 check("garbage descriptor is safe", HidReportDescriptor.Parse(new byte[] { 0xFF, 0xFF, 0xFF, 0x00 }).Fields.Count == 0);
             }

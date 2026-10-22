@@ -1,11 +1,13 @@
 # Third-party notices
 
 GearPower is an independent C# implementation. No source code from the
-projects below is copied into this repository; their protocol descriptions,
-command layouts and public reverse-engineering notes were used as references.
+projects below is copied verbatim; protocol descriptions, command layouts,
+public reverse-engineering notes and selected UI/config concepts were used as
+references and adapted.
 
 | Project | License | Used for |
 | --- | --- | --- |
+| [Cxxhh/GearPower](https://github.com/Cxxhh/GearPower) | MIT | v2.0.0 device-profile schema/UI, grouped inventory and recent-log concepts, adapted to the single-Windows-app version |
 | [Fan4Metal/mouse_tray](https://github.com/Fan4Metal/mouse_tray) | Not declared in repository at the time of writing | ATK/VXE/VGN (Compx Nordic 52/54), Razer, Lamzu and Logitech protocol layouts |
 | [OpenRazer](https://github.com/openrazer/openrazer) | GPL-2.0-or-later | Razer 90-byte feature report and command class |
 | [tcr27/razer-blackshark-battery-info](https://github.com/tcr27/razer-blackshark-battery-info) | MIT | Razer BlackShark V2 Pro `1532:0555` 64-byte interrupt OUT/IN battery layout |

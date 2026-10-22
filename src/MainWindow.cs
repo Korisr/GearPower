@@ -6,6 +6,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -46,6 +47,10 @@ namespace GearPower
         private readonly Button settingsTab;
         private readonly Button refreshButton;
         private readonly Border settingsView;
+        private readonly Border profileView;
+        private readonly Grid profileHost;
+        private readonly Button profileTab;
+        private DeviceProfileView profileController;
         private readonly Button themeSystemOption;
         private readonly Button themeLightOption;
         private readonly Button themeDarkOption;
@@ -137,8 +142,11 @@ namespace GearPower
             deviceRequestButton = Find<Button>("DeviceRequestButton");
             batteryTab = Find<Button>("BatteryTab");
             deviceTab = Find<Button>("DeviceTab");
+            profileTab = Find<Button>("ProfileTab");
             settingsTab = Find<Button>("SettingsTab");
             settingsView = Find<Border>("SettingsView");
+            profileView = Find<Border>("ProfileView");
+            profileHost = Find<Grid>("ProfileHost");
             themeSystemOption = Find<Button>("ThemeSystemOption");
             themeLightOption = Find<Button>("ThemeLightOption");
             themeDarkOption = Find<Button>("ThemeDarkOption");
@@ -196,12 +204,14 @@ namespace GearPower
             copyDiagButton.Click += (s, e) => CopyDiagnostics();
             deviceRequestButton.Click += (s, e) => OpenDeviceRequest();
             Find<Button>("SettingsLogButton").Click += (s, e) => OpenLog();
+            Find<Button>("SettingsLiveLogButton").Click += (s, e) => LogWindow.Show(window);
             Find<Button>("SettingsTrayHelpButton").Click += (s, e) => ShowTrayHelp();
             Find<Button>("SettingsFolderButton").Click += (s, e) => OpenExeFolder();
             Find<Button>("SettingsElevateButton").Click += (s, e) => { RestartAsAdministrator(); };
             Find<Button>("SettingsExitButton").Click += (s, e) => ExitApplication();
             batteryTab.Click += (s, e) => ShowTab(false);
             deviceTab.Click += (s, e) => ShowTab(true);
+            profileTab.Click += (s, e) => ShowProfile();
             settingsTab.Click += (s, e) => ShowSettings();
             themeSystemOption.Click += (s, e) => SetThemeMode(ThemeMode.System);
             themeLightOption.Click += (s, e) => SetThemeMode(ThemeMode.Light);
@@ -270,10 +280,17 @@ namespace GearPower
                     taskbarWidget.Dispose();
                     taskbarWidget = null;
                 }
+                if (profileController != null)
+                {
+                    profileController.Dispose();
+                    profileController = null;
+                }
                 if (!demoMode) BatteryCache.Save();
             };
 
             demoBadge.Visibility = demo ? Visibility.Visible : Visibility.Collapsed;
+            profileController = new DeviceProfileView(window, () => new List<InventoryRow>(lastInventory), Scan, demo);
+            if (profileHost != null) profileHost.Children.Add(profileController);
             ShowTab(false);
             UpdateMaximizeGlyph();
             RefreshSettingsState();
@@ -378,7 +395,8 @@ namespace GearPower
                 Scan();
                 e.Handled = true;
             }
-            else if (e.Key == Key.Escape && (showingDevices || showingSettings))
+            else if (e.Key == Key.Escape && (showingDevices || showingSettings ||
+                (profileView != null && profileView.Visibility == Visibility.Visible)))
             {
                 ShowTab(false);
                 e.Handled = true;
@@ -1170,6 +1188,8 @@ namespace GearPower
 
             RenderCards(display);
             RenderInventory(result.Inventory);
+            if (profileView != null && profileView.Visibility == Visibility.Visible && profileController != null)
+                profileController.RefreshProfiles();
             UpdateSummary();
 
             scanTimeText.Text = string.Format(CultureInfo.InvariantCulture,
@@ -1637,7 +1657,9 @@ namespace GearPower
         private void RenderInventory(List<InventoryRow> rows)
         {
             inventoryPanel.Children.Clear();
-            inventoryCount.Text = "· " + rows.Count + " 个接口";
+            List<InventoryCategory> categories = InventoryGroups.Build(rows);
+            int deviceCount = categories.Sum(category => category.Devices.Count);
+            inventoryCount.Text = "· " + rows.Count + " 个接口 · " + deviceCount + " 台设备";
 
             if (rows.Count == 0)
             {
@@ -1650,10 +1672,151 @@ namespace GearPower
                 return;
             }
 
-            foreach (InventoryRow row in rows)
+            foreach (InventoryCategory category in categories)
             {
-                inventoryPanel.Children.Add(BuildInventoryRow(row));
+                var categoryHeader = new TextBlock();
+                categoryHeader.Text = category.Name + "  ·  " + category.Devices.Count + " 台 / " + category.InterfaceCount + " 个接口";
+                categoryHeader.FontSize = 10.5;
+                categoryHeader.FontWeight = FontWeights.SemiBold;
+                categoryHeader.Foreground = Theme.Muted;
+                categoryHeader.Margin = new Thickness(8, 12, 8, 4);
+                inventoryPanel.Children.Add(categoryHeader);
+
+                int index = 0;
+                foreach (InventoryDeviceGroup device in category.Devices)
+                {
+                    inventoryPanel.Children.Add(BuildInventoryGroup(device, index == 0));
+                    index++;
+                }
             }
+        }
+
+        private Border BuildInventoryGroup(InventoryDeviceGroup device, bool expanded)
+        {
+            var outer = new Border();
+            outer.Margin = new Thickness(6, 2, 6, 2);
+            outer.Background = Theme.Panel;
+            outer.BorderBrush = Theme.RowBorder;
+            outer.BorderThickness = new Thickness(1);
+            outer.CornerRadius = new CornerRadius(10);
+            outer.ClipToBounds = true;
+
+            var root = new StackPanel();
+            var header = new Border();
+            header.Height = 52;
+            header.Padding = new Thickness(10, 0, 8, 0);
+            header.Background = device.Supported ? Theme.RowSupported : Brushes.Transparent;
+            header.Cursor = Cursors.Hand;
+
+            var grid = new Grid();
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(18) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.2, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var chevron = new TextBlock();
+            chevron.Text = expanded ? "\uE70E" : "\uE70D";
+            chevron.FontFamily = Theme.IconFont;
+            chevron.FontSize = 10;
+            chevron.Foreground = Theme.Muted;
+            chevron.VerticalAlignment = VerticalAlignment.Center;
+            grid.Children.Add(chevron);
+
+            var name = new TextBlock();
+            name.Text = device.Name;
+            name.FontSize = 12;
+            name.FontWeight = FontWeights.SemiBold;
+            name.Foreground = device.Supported ? Theme.Text : Theme.Secondary;
+            name.TextTrimming = TextTrimming.CharacterEllipsis;
+            name.VerticalAlignment = VerticalAlignment.Center;
+            Grid.SetColumn(name, 1);
+            grid.Children.Add(name);
+
+            var vid = new TextBlock();
+            vid.Text = device.VidPid;
+            vid.FontSize = 10;
+            vid.Foreground = Theme.Muted;
+            vid.VerticalAlignment = VerticalAlignment.Center;
+            Grid.SetColumn(vid, 2);
+            grid.Children.Add(vid);
+
+            var badge = new TextBlock();
+            badge.Text = device.Supported ? "已支持" : "未适配";
+            badge.FontSize = 9.5;
+            badge.Foreground = device.Supported ? Theme.Accent : Theme.Muted;
+            badge.VerticalAlignment = VerticalAlignment.Center;
+            Grid.SetColumn(badge, 3);
+            grid.Children.Add(badge);
+
+            var actions = new StackPanel();
+            actions.Orientation = Orientation.Horizontal;
+            actions.VerticalAlignment = VerticalAlignment.Center;
+            Button agent = MakeInventoryAction("复制给 Agent");
+            agent.Click += (s, e) =>
+            {
+                CopyText(DeviceAgentPrompt.Build(GroupDiagnostic(device)),
+                    "已复制设备诊断和 Agent 适配提示词");
+            };
+            actions.Children.Add(agent);
+            Button diagnostic = MakeInventoryAction("复制诊断");
+            diagnostic.Margin = new Thickness(4, 0, 0, 0);
+            diagnostic.Click += (s, e) => CopyText(GroupDiagnostic(device), "已复制该设备组的诊断信息");
+            actions.Children.Add(diagnostic);
+            Grid.SetColumn(actions, 4);
+            grid.Children.Add(actions);
+
+            header.Child = grid;
+            root.Children.Add(header);
+
+            var content = new StackPanel();
+            content.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
+            foreach (InventoryRow row in device.Interfaces)
+            {
+                content.Children.Add(BuildInventoryRow(row));
+            }
+            root.Children.Add(content);
+
+            header.MouseLeftButtonUp += (s, e) =>
+            {
+                bool visible = content.Visibility == Visibility.Visible;
+                content.Visibility = visible ? Visibility.Collapsed : Visibility.Visible;
+                chevron.Text = visible ? "\uE70D" : "\uE70E";
+                e.Handled = true;
+            };
+            header.MouseEnter += (s, e) => header.Background = Theme.RowHover;
+            header.MouseLeave += (s, e) => header.Background = device.Supported ? Theme.RowSupported : Brushes.Transparent;
+
+            outer.Child = root;
+            return outer;
+        }
+
+        private static Button MakeInventoryAction(string text)
+        {
+            var button = new Button();
+            button.Content = text;
+            button.FontSize = 9.5;
+            button.Padding = new Thickness(7, 3, 7, 3);
+            button.MinWidth = 0;
+            button.Foreground = Theme.Secondary;
+            button.Background = Theme.GhostHover;
+            button.BorderBrush = Theme.OptionBorder;
+            button.BorderThickness = new Thickness(1);
+            return button;
+        }
+
+        private static string GroupDiagnostic(InventoryDeviceGroup device)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine(device.Name + "  ·  " + device.VidPid);
+            sb.AppendLine("共 " + device.Interfaces.Count + " 个接口");
+            sb.AppendLine("========================================");
+            foreach (InventoryRow row in device.Interfaces)
+            {
+                sb.AppendLine(row.Detail);
+                sb.AppendLine("----------------------------------------");
+            }
+            return sb.ToString().TrimEnd();
         }
 
         private Border BuildInventoryRow(InventoryRow row)
@@ -1730,8 +1893,10 @@ namespace GearPower
             showingDevices = devices;
             showingSettings = false;
             settingsView.Visibility = Visibility.Collapsed;
+            profileView.Visibility = Visibility.Collapsed;
             SetTabState(batteryTab, !devices);
             SetTabState(deviceTab, devices);
+            SetTabState(profileTab, false);
             SetTabState(settingsTab, false);
             if (devices)
             {
@@ -1748,16 +1913,34 @@ namespace GearPower
             }
         }
 
+        private void ShowProfile()
+        {
+            showingDevices = false;
+            showingSettings = false;
+            profileView.Visibility = Visibility.Visible;
+            inventoryView.Visibility = Visibility.Collapsed;
+            settingsView.Visibility = Visibility.Collapsed;
+            cardScroll.Visibility = Visibility.Collapsed;
+            emptyState.Visibility = Visibility.Collapsed;
+            SetTabState(batteryTab, false);
+            SetTabState(deviceTab, false);
+            SetTabState(profileTab, true);
+            SetTabState(settingsTab, false);
+            if (profileController != null) profileController.RefreshProfiles();
+        }
+
         private void ShowSettings()
         {
             showingSettings = true;
             showingDevices = false;
             settingsView.Visibility = Visibility.Visible;
+            profileView.Visibility = Visibility.Collapsed;
             inventoryView.Visibility = Visibility.Collapsed;
             cardScroll.Visibility = Visibility.Collapsed;
             emptyState.Visibility = Visibility.Collapsed;
             SetTabState(batteryTab, false);
             SetTabState(deviceTab, false);
+            SetTabState(profileTab, false);
             SetTabState(settingsTab, true);
             RefreshSettingsState();
         }

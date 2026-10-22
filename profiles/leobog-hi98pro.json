@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "id": "leobog-hi98pro",
+  "name": "LEOBOG HI98PRO",
+  "vendor": "LEOBOG",
+  "kind": "keyboard",
+  "enabled": true,
+  "priority": 100,
+  "matches": [
+    {
+      "vid": "3554",
+      "pid": "FA09",
+      "usagePage": "FF02",
+      "usage": "0002",
+      "inputLength": 20,
+      "outputLength": 20,
+      "featureLength": 0,
+      "transport": "wireless"
+    }
+  ],
+  "steps": [
+    {
+      "id": "battery",
+      "method": "output",
+      "request": "13 CA",
+      "requestChecksum": {
+        "algorithm": "sum8",
+        "start": 0,
+        "count": 19,
+        "offset": 19
+      },
+      "attempts": 6,
+      "timeoutMs": 350,
+      "response": {
+        "length": 20,
+        "prefix": "13 4A 01 00 02",
+        "checksum": {
+          "algorithm": "sum8",
+          "start": 0,
+          "count": 19,
+          "offset": 19
+        }
+      },
+      "failureNote": "接收器在线，键盘电量暂未响应；请切到 2.4G 并按键唤醒"
+    }
+  ],
+  "result": {
+    "percent": {
+      "step": "battery",
+      "offset": 5
+    },
+    "charging": {
+      "step": "battery",
+      "offset": 6,
+      "trueValues": [16],
+      "falseValues": [1]
+    },
+    "percentUnavailableWhen": [
+      {
+        "step": "battery",
+        "offset": 6,
+        "values": [16]
+      },
+      {
+        "step": "battery",
+        "offset": 5,
+        "values": [100]
+      }
+    ],
+    "note": "通过设备配置读取"
+  }
+}

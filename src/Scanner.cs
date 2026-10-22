@@ -19,6 +19,17 @@ namespace GearPower
         public string Path;
         public string Detail;
         public bool IsSupported;
+        public string GroupId;
+        public string KindId;
+        public string Vendor;
+        public string Product;
+        public ushort Vid;
+        public ushort Pid;
+        public ushort UsagePage;
+        public ushort UsageValue;
+        public int InputLength;
+        public int OutputLength;
+        public int FeatureLength;
     }
 
     public sealed class ScanResult
@@ -37,6 +48,7 @@ namespace GearPower
         {
             var watch = Stopwatch.StartNew();
             var result = new ScanResult();
+            ProfileRunner.Reload();
 
             List<HidInterfaceInfo> interfaces;
             try
@@ -88,6 +100,7 @@ namespace GearPower
 
                 if (probe != null)
                 {
+                    if (probe.Kind.HasValue) group.Kind = probe.Kind.Value;
                     DeviceReading reading = ToReading(group, probe);
                     if (reading != null)
                     {
@@ -232,6 +245,17 @@ namespace GearPower
                 row.Name = group != null ? group.Name : L10n.DisplayName(iface.Vid, iface.Pid, iface.Product);
                 if (iface.InterfaceNumber >= 0) row.Name += "  ·  IF" + iface.InterfaceNumber;
                 row.Kind = KindNames.Label(group != null ? group.Kind : L10n.KindFromName(iface.Product));
+                row.KindId = InventoryGroups.KindId(group != null ? group.Kind : L10n.KindFromName(iface.Product));
+                row.GroupId = key;
+                row.Vid = iface.Vid;
+                row.Pid = iface.Pid;
+                row.UsagePage = iface.UsagePage;
+                row.UsageValue = iface.Usage;
+                row.InputLength = iface.InputLength;
+                row.OutputLength = iface.OutputLength;
+                row.FeatureLength = iface.FeatureLength;
+                row.Vendor = group != null ? group.Vendor : L10n.VendorName(iface.Vid);
+                row.Product = iface.Product;
                 row.VidPid = iface.VidPid;
                 row.Usage = iface.UsageText;
                 row.Interface = iface.InterfaceNumber >= 0 ? iface.InterfaceNumber.ToString(CultureInfo.InvariantCulture) : "—";
@@ -295,6 +319,8 @@ namespace GearPower
                 var row = new InventoryRow();
                 row.Name = reading.Name;
                 row.Kind = KindNames.Label(reading.Kind);
+                row.KindId = InventoryGroups.KindId(reading.Kind);
+                row.GroupId = "bt:" + reading.Id;
                 row.VidPid = "蓝牙";
                 row.Usage = "BLE / 经典蓝牙";
                 row.Interface = "—";
