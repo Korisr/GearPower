@@ -172,6 +172,7 @@ namespace GearPower
             Add(m, 0x373E, 0x001C, "Lamzu Maya X", DeviceKind.Mouse, false);
             Add(m, 0x37B0, 0x0010, "Lamzu Inca", DeviceKind.Mouse, true);
             Add(m, 0x37B0, 0x0009, "Lamzu Inca", DeviceKind.Mouse, false);
+            Add(m, 0x37B0, 0x0040, "Lamzu Thorn V2", DeviceKind.Mouse, true);
 
             Add(m, 0x1D57, 0xFA60, "Attack Shark X3", DeviceKind.Mouse, true);
             Add(m, 0x1D57, 0xFA61, "Attack Shark X3", DeviceKind.Mouse, false);

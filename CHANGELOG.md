@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.2.1-beta] - 2026-10-22
+
+### Features
+
+- 增加 Lamzu Thorn V2（`37B0:0040`）已知型号映射，沿用现有 Lamzu 0x83 特性报告协议
+
 ## [1.2.0-beta] - 2026-10-22
 
 ### Features
