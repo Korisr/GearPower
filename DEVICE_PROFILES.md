@@ -4,9 +4,10 @@ GearPower 支持通过 JSON 配置为厂商 HID 设备增加电量读取，不�
 
 ## 位置和优先级
 
+- 随附配置：已内嵌进 exe，开箱即用
+- 覆盖配置：exe 旁的 `profiles\*.json`
 - 用户配置：`%LOCALAPPDATA%\GearPower\profiles\<id>.json`
-- 随附示例：exe 旁的 `profiles\*.json`
-- 同 id 的用户配置覆盖随附配置
+- 优先级：用户配置 > exe 旁配置 > 内嵌随附配置
 - 每次扫描重新加载；导入或移除后自动重新扫描
 
 文件上限 128 KB，用户目录最多 64 份。配置只描述 HID 查询和数值解析，不支持执行脚本、加载 DLL 或调用外部程序。
@@ -97,4 +98,6 @@ GearPower 支持通过 JSON 配置为厂商 HID 设备增加电量读取，不�
 ## 示例
 
 - `profiles/hjsdzhi-s1-v2.json`
+- `profiles/leobog-hi75cpro.json`
 - `profiles/leobog-hi98pro.json`
+- `profiles/asus-rog-pelta-2-4g.json`

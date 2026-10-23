@@ -29,7 +29,8 @@ namespace GearPower
                 foreach (ProfileMatch candidate in profile.matches ?? new ProfileMatch[0])
                 {
                     if (candidate == null) continue;
-                    HidInterfaceInfo found = FindInterface(candidate, group.Interfaces);
+                    HidInterfaceInfo found = FindInterface(candidate, group.Interfaces,
+                        (group.Product ?? "") + " " + (group.Name ?? ""));
                     if (found == null) continue;
                     match = candidate;
                     iface = found;
@@ -49,7 +50,7 @@ namespace GearPower
             HidInterfaceInfo iface = null;
             foreach (ProfileMatch candidate in profile.matches ?? new ProfileMatch[0])
             {
-                HidInterfaceInfo found = FindInterface(candidate, HidEnumerator.Enumerate());
+                HidInterfaceInfo found = FindInterface(candidate, HidEnumerator.Enumerate(), null);
                 if (found == null) continue;
                 match = candidate;
                 iface = found;
@@ -214,7 +215,8 @@ namespace GearPower
             return null;
         }
 
-        private static HidInterfaceInfo FindInterface(ProfileMatch match, IEnumerable<HidInterfaceInfo> interfaces)
+        private static HidInterfaceInfo FindInterface(ProfileMatch match, IEnumerable<HidInterfaceInfo> interfaces,
+            string product)
         {
             ushort vid;
             ushort pid;
@@ -231,6 +233,10 @@ namespace GearPower
             {
                 return null;
             }
+            if (!string.IsNullOrEmpty(match.productContains) &&
+                (product == null || product.IndexOf(match.productContains,
+                    StringComparison.CurrentCultureIgnoreCase) < 0))
+                return null;
             return interfaces.FirstOrDefault(iface =>
                 iface.Vid == vid && iface.Pid == pid &&
                 iface.UsagePage == usagePage && iface.Usage == usage &&

@@ -20,6 +20,8 @@ New-Item -ItemType Directory -Force -Path $dist | Out-Null
 
 $sources = Get-ChildItem (Join-Path $root "src") -Filter "*.cs" | Sort-Object Name | ForEach-Object { $_.FullName }
 if ($sources.Count -eq 0) { throw "No .cs files found under src" }
+$profileResources = Get-ChildItem (Join-Path $root "profiles") -Filter "*.json" -File |
+    Sort-Object Name | ForEach-Object { "/resource:$($_.FullName),profiles/$($_.Name)" }
 
 $arguments = @(
     "/nologo",
@@ -40,7 +42,7 @@ $arguments = @(
     "/r:System.dll",
     "/r:System.Core.dll",
     "/r:System.Web.Extensions.dll"
-) + $sources
+) + $profileResources + $sources
 
 Write-Host "Compiling GearPower..." -ForegroundColor Cyan
 & $csc $arguments

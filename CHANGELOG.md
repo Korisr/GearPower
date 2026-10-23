@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.2.4] - 2026-10-23
+
+### Features
+
+- 将 HJSDZHI S1-V2、LEOBOG Hi75c Pro、LEOBOG HI98PRO、ASUS ROG PELTA 随附配置内嵌进 exe
+- 无 `profiles/` 目录也能加载随附协议；exe 旁目录和用户目录仍可覆盖
+- 新增 `productContains` 匹配，LEOBOG Hi75c Pro 与 HI98PRO 按设备型号名区分
+- 配置列表明确显示 `LEOBOG Hi75c Pro`、`LEOBOG HI98PRO`、`ASUS ROG PELTA 2.4GHz`
+- 已知型号补充 LEOBOG Hi75c Pro、Logitech PRO X Wireless、ASUS ROG PELTA
+
 ## [1.2.3] - 2026-10-23
 
 ### Features

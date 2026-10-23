@@ -15,7 +15,8 @@
       "inputLength": 20,
       "outputLength": 20,
       "featureLength": 0,
-      "transport": "wireless"
+      "transport": "wireless",
+      "productContains": "HI98"
     }
   ],
   "steps": [

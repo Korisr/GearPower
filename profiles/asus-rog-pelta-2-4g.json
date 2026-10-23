@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "id": "asus-rog-pelta-2-4g",
-  "name": "ROG PELTA (2.4GHz)",
+  "name": "ASUS ROG PELTA 2.4GHz",
   "vendor": "ASUS",
   "kind": "headset",
   "enabled": true,
-  "priority": 90,
+  "priority": 120,
   "matches": [
     {
       "vid": "0B05",
@@ -15,7 +15,8 @@
       "inputLength": 64,
       "outputLength": 64,
       "featureLength": 0,
-      "transport": "wireless"
+      "transport": "wireless",
+      "productContains": "PELTA"
     }
   ],
   "steps": [

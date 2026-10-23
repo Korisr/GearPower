@@ -161,6 +161,7 @@ namespace GearPower
             Add(m, 0x3554, 0xF526, "Zaopin Z2 Mini", DeviceKind.Mouse, false);
             Add(m, 0x3554, 0xF5F7, "Scyrox V8", DeviceKind.Mouse, true);
             Add(m, 0x3554, 0xF5F6, "Scyrox V8", DeviceKind.Mouse, false);
+            Add(m, 0x3554, 0xFA09, "LEOBOG Hi75c Pro", DeviceKind.Keyboard, true);
 
             Add(m, 0x260D, 0x1175, "Dareu A950 Air", DeviceKind.Mouse, true);
             Add(m, 0x260D, 0x1193, "Dareu A950 Air", DeviceKind.Mouse, false);

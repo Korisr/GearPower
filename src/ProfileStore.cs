@@ -18,6 +18,29 @@ namespace GearPower
         {
             errors = new List<string>();
             var profiles = new Dictionary<string, DeviceProfile>(StringComparer.Ordinal);
+            var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+            foreach (string resource in assembly.GetManifestResourceNames()
+                .Where(n => n.StartsWith("profiles/", StringComparison.Ordinal) &&
+                            n.EndsWith(".json", StringComparison.OrdinalIgnoreCase)))
+            {
+                try
+                {
+                    using (Stream stream = assembly.GetManifestResourceStream(resource))
+                    {
+                        if (stream == null) throw new FileNotFoundException("缺少内嵌配置：" + resource);
+                        using (var reader = new StreamReader(stream, Encoding.UTF8))
+                        {
+                            DeviceProfile profile = ProfileJson.Parse(reader.ReadToEnd());
+                            profile.SourcePath = "resource:" + resource;
+                            profiles[profile.id] = profile;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errors.Add(resource + "：" + ex.Message);
+                }
+            }
             foreach (string directory in new[] { BundledDirectory, UserDirectory })
             {
                 try
@@ -35,6 +58,7 @@ namespace GearPower
                             profile.UserFile = string.Equals(directory, UserDirectory, StringComparison.OrdinalIgnoreCase);
                             if (profiles.ContainsKey(profile.id) &&
                                 profiles[profile.id].UserFile == profile.UserFile &&
+                                !profiles[profile.id].SourcePath.StartsWith("resource:", StringComparison.Ordinal) &&
                                 !string.Equals(profiles[profile.id].SourcePath, path, StringComparison.OrdinalIgnoreCase))
                                 throw new FormatException("同一目录存在重复配置 id：" + profile.id);
                             profiles[profile.id] = profile;

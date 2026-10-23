@@ -207,15 +207,18 @@ namespace GearPower
                 check("microphone kind by name", L10n.KindFromName("Razer Seiren V3 Mini") == DeviceKind.Microphone);
                 check("known dock model", KnownDevices.Find(0xC019, 0xB300) != null &&
                     KnownDevices.Find(0xC019, 0xB300).Kind == DeviceKind.Dock);
-                string profilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "profiles", "hjsdzhi-s1-v2.json");
-                check("profile preset exists", File.Exists(profilePath));
-                if (File.Exists(profilePath))
+                List<string> profileErrors;
+                List<DeviceProfile> embeddedProfiles = ProfileStore.Load(out profileErrors);
+                DeviceProfile profile = embeddedProfiles.FirstOrDefault(p => p.id == "hjsdzhi-s1-v2");
+                check("embedded profile preset exists", profile != null);
+                if (profile != null)
                 {
-                    DeviceProfile profile = ProfileJson.Parse(File.ReadAllText(profilePath, Encoding.UTF8));
                     check("profile preset parses", profile.id == "hjsdzhi-s1-v2" && profile.matches.Length == 2);
                     DeviceProfile roundtrip = ProfileJson.Parse(ProfileJson.Pretty(profile));
                     check("profile roundtrip", roundtrip.id == profile.id && roundtrip.steps.Length == 2);
                 }
+                check("embedded hi75 profile", embeddedProfiles.Any(p => p.id == "leobog-hi75cpro"));
+                check("embedded pelta profile", embeddedProfiles.Any(p => p.id == "asus-rog-pelta-2-4g"));
                 try
                 {
                     ProfileJson.Parse("{\"schemaVersion\":1,\"id\":\"bad\",\"name\":\"bad\",\"unknown\":1}");

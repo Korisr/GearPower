@@ -79,7 +79,7 @@ Windows 10/11 · .NET Framework 4.8 · 单文件 · 本地读取，不联网
 - 支持 sum8 / xor8 校验、前缀匹配、字段 mask/shift、大小端和条件
 - 保存前严格校验 JSON，未知字段、越界偏移和错误长度都会拒绝
 - 用户配置位于 `%LOCALAPPDATA%\GearPower\profiles\<id>.json`
-- 随附示例位于 exe 旁的 `profiles/`；同 id 用户配置优先
+- 随附配置已内嵌进 exe，可直接使用；exe 旁的 `profiles/` 和用户目录可覆盖同 id 配置
 - 每次扫描重新加载配置，导入或移除后自动重新扫描
 - JSON 只能描述 HID 查询和数值解析，不支持执行脚本、DLL 或外部程序
 
@@ -198,6 +198,7 @@ Windows 10/11 · .NET Framework 4.8 · 单文件 · 本地读取，不联网
 | 兰族 Lamzu Maya X / Inca | HID 特性报告 `0x83` | **已实机验证**（Maya X 8K Dongle，31%） |
 | ATK / VXE / VGN / 达尔优 / G-Wolves 等 Compx 方案 | Nordic 52（17 字节）/ Nordic 54（64 字节） | **ATK Zero 已实机验证**（Nordic 54，100%）；其他型号按协议实现 |
 | ATK Horizon | 有线耳机，无电池 | 只在设备清单显示，不生成电量卡片 |
+| LEOBOG Hi75c Pro / HI98PRO | `3554:FA09`，FF02/0002，20 字节 `13 CA` | 配置已内置，按型号名自动选择；待实机确认 |
 | 迈从 MCHOSE K7 Ultra | Realtek `0xFF01`，报告 `0x11/0x13`，`0xE2` 电量事件 | **已实机验证**（2.4G，83%） |
 | 迈从 MCHOSE L7 Pro | 同上（Realtek `0xFF01`） | 协议已实现，待 L7 Pro 实机验证 |
 | Razer 雷蛇无线鼠标 | 90 字节特性报告，命令类 `0x02/0x07` | 按 OpenRazer 公开协议实现 |
@@ -278,7 +279,7 @@ GearPower.exe --tray-preview  生成托盘电池预览图
 
 ## 构建
 
-当前版本：**1.2.3**。需要 Windows 10/11 自带的 .NET Framework 4.8 与 `csc.exe`（无需 Visual Studio / .NET SDK）。
+当前版本：**1.2.4**。需要 Windows 10/11 自带的 .NET Framework 4.8 与 `csc.exe`（无需 Visual Studio / .NET SDK）。
 
 ```powershell
 git clone https://github.com/XAVIER0229/GearPower.git
@@ -376,7 +377,7 @@ Razer、ASUS ROG、HyperX、ATK、VXE、Lamzu、Logitech 等名称和商标归�
 
 ## 版本
 
-当前公开版本 **1.2.3**，变更见 [CHANGELOG.md](CHANGELOG.md)。
+当前公开版本 **1.2.4**，变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## License
 

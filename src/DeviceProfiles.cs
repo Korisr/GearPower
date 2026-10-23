@@ -39,6 +39,7 @@ namespace GearPower
         public string usagePage;
         public string usage;
         public string transport;
+        public string productContains;
         public int inputLength = -1;
         public int outputLength = -1;
         public int featureLength = -1;
@@ -250,6 +251,8 @@ namespace GearPower
                 HexId(m.vid); HexId(m.pid); HexId(m.usagePage); HexId(m.usage);
                 if (m.transport != null && !new[] { "wired", "wireless", "bluetooth" }.Contains(m.transport))
                     throw new FormatException("transport 应为 wired、wireless 或 bluetooth。");
+                if ((m.productContains ?? "").Length > 120)
+                    throw new FormatException("productContains 最多 120 字符。");
                 if (!native && HexId(m.usagePage) < 0xFF00)
                     throw new FormatException("自定义配置仅支持厂商 Usage Page（FF00–FFFF）。");
                 foreach (int length in new[] { m.inputLength, m.outputLength, m.featureLength })
