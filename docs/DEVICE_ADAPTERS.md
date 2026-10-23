@@ -54,7 +54,7 @@ RX: CC 12 07 00 00 00 56 00 01 ...  (64 字节)
 ```
 
 - 该查询是只读的，不会写 DPI、灯效或 EQ。
-- 可直接导入的 JSON 见 [`profiles/asus-rog-pelta-2-4g.json`](profiles/asus-rog-pelta-2-4g.json)。
+- 可直接导入的 JSON 见 [`profiles/asus-rog-pelta-2-4g.json`](../profiles/asus-rog-pelta-2-4g.json)。
 
 ## 为什么只有 ASUS 用 JSON
 

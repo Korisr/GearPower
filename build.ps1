@@ -54,10 +54,12 @@ Copy-Item (Join-Path $root "LICENSE") $dist -Force
 Copy-Item (Join-Path $root "CONTRIBUTING.md") $dist -Force
 Copy-Item (Join-Path $root "SECURITY.md") $dist -Force
 Copy-Item (Join-Path $root "CHANGELOG.md") $dist -Force
-Copy-Item (Join-Path $root "DEVICE_PROFILES.md") $dist -Force
-Copy-Item (Join-Path $root "DEVICE_ADAPTERS.md") $dist -Force
-Copy-Item (Join-Path $root "PATCH_NOTES.md") $dist -Force
-Get-ChildItem $root -Filter "RELEASE_NOTES_*.md" -File | Copy-Item -Destination $dist -Force
+Copy-Item (Join-Path $root "docs\DEVICE_PROFILES.md") $dist -Force
+Copy-Item (Join-Path $root "docs\DEVICE_ADAPTERS.md") $dist -Force
+Copy-Item (Join-Path $root "docs\PATCH_NOTES.md") $dist -Force
+Get-ChildItem $dist -Filter "RELEASE_NOTES_*.md" -File | Remove-Item -Force -ErrorAction SilentlyContinue
+Get-ChildItem (Join-Path $root "docs\releases") -Filter "RELEASE_NOTES_*.md" -File |
+    Copy-Item -Destination $dist -Force
 $assetTarget = Join-Path $dist "assets"
 New-Item -ItemType Directory -Force -Path $assetTarget | Out-Null
 Get-ChildItem (Join-Path $root "assets") -Filter "*.png" | Copy-Item -Destination $assetTarget -Force

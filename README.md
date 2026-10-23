@@ -135,7 +135,7 @@ Windows 10/11 · .NET Framework 4.8 · 单文件 · 本地读取，不联网
 }
 ```
 
-完整字段、校验和、条件、`featureQuery` 和内置协议引用见 [DEVICE_PROFILES.md](DEVICE_PROFILES.md)。
+完整字段、校验和、条件、`featureQuery` 和内置协议引用见 [docs/DEVICE_PROFILES.md](docs/DEVICE_PROFILES.md)。
 
 ### 字段速查
 
@@ -332,7 +332,9 @@ src/
 ui.xaml             界面布局与样式
 assets/app.ico      应用图标
 profiles/           随附设备配置示例
-DEVICE_PROFILES.md  设备配置格式说明
+docs/DEVICE_PROFILES.md  设备配置格式说明
+docs/DEVICE_ADAPTERS.md  三设备协议与验证记录
+docs/releases/      当前与历史发布说明
 app.manifest        DPI / 权限清单
 ```
 
@@ -377,7 +379,7 @@ Razer、ASUS ROG、HyperX、ATK、VXE、Lamzu、Logitech 等名称和商标归�
 
 ## 版本
 
-当前公开版本 **1.2.4**，变更见 [CHANGELOG.md](CHANGELOG.md)。
+当前公开版本 **1.2.4**，变更见 [CHANGELOG.md](CHANGELOG.md)。当前发布说明见 [docs/releases](docs/releases/)，历史版本折叠归档在 [docs/releases/archive](docs/releases/archive/)。
 
 ## License
 
