@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.6] - 2026-10-23
+
+### Features
+
+- 新增 Flydigi Vader 5 Pro（`37D7:2401`）控制器电量配置
+- 查询 `00 5A A5 01 02 03`，33 字节响应，sum8(3..31) 校验
+- 电量取 offset 12 低 4 位，充电状态取高 4 位（0 未充、2 充电中）
+- 配置已内嵌，无需 `profiles/` 目录
+
+### Documentation
+
+- 支持列表、配置示例和 Release Notes 同步更新
+
 ## [1.2.5] - 2026-10-23
 
 ### Features

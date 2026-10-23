@@ -219,6 +219,13 @@ namespace GearPower
                 }
                 check("embedded hi75 profile", embeddedProfiles.Any(p => p.id == "leobog-hi75cpro"));
                 check("embedded pelta profile", embeddedProfiles.Any(p => p.id == "asus-rog-pelta-2-4g"));
+                DeviceProfile flydigi = embeddedProfiles.FirstOrDefault(p => p.id == "flydigi-vader-5-pro");
+                check("embedded flydigi profile", flydigi != null);
+                if (flydigi != null)
+                {
+                    check("flydigi battery nibble", flydigi.result.percent.offset == 12 &&
+                        flydigi.result.percent.mask == 15 && flydigi.result.percent.scale == 10);
+                }
                 try
                 {
                     ProfileJson.Parse("{\"schemaVersion\":1,\"id\":\"bad\",\"name\":\"bad\",\"unknown\":1}");

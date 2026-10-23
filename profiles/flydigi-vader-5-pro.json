@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "flydigi-vader-5-pro",
+  "name": "Flydigi Vader 5 Pro",
+  "vendor": "Flydigi",
+  "kind": "controller",
+  "enabled": true,
+  "priority": 100,
+  "matches": [
+    {
+      "vid": "37D7",
+      "pid": "2401",
+      "usagePage": "FFA0",
+      "usage": "0001",
+      "inputLength": 33,
+      "outputLength": 33,
+      "featureLength": 0,
+      "transport": "wireless"
+    }
+  ],
+  "steps": [
+    {
+      "id": "battery",
+      "method": "output",
+      "reportId": 0,
+      "request": "00 5A A5 01 02 03",
+      "attempts": 3,
+      "timeoutMs": 500,
+      "response": {
+        "length": 33,
+        "prefix": "00 5A A5 01 01 00",
+        "checksum": {
+          "algorithm": "sum8",
+          "start": 3,
+          "count": 29,
+          "offset": 32
+        }
+      },
+      "failureNote": "未收到 cmd=01 响应或校验失败"
+    }
+  ],
+  "result": {
+    "percent": {
+      "step": "battery",
+      "offset": 12,
+      "size": 1,
+      "mask": 15,
+      "shift": 0,
+      "scale": 10,
+      "add": 0
+    },
+    "charging": {
+      "step": "battery",
+      "offset": 12,
+      "size": 1,
+      "mask": 240,
+      "shift": 4,
+      "trueValues": [2],
+      "falseValues": [0]
+    },
+    "note": "实机验证（接收器 37D7:2401）：查询 00 5A A5 01 02 03；响应 cmd=01，sum8(3..31) 在 32；电量 offset 12 低 4 位（充电中 4→5，即 40%→50%）；高 4 位实测 0=未充、2=充电中；厂商设置页把 2 标成“已充满”，与电量上升矛盾；1 尚未观察到，full 暂不映射"
+  }
+}

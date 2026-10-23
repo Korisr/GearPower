@@ -200,6 +200,7 @@ Windows 10/11 · .NET Framework 4.8 · 单文件 · 本地读取，不联网
 | ATK / VXE / VGN / 达尔优 / G-Wolves 等 Compx 方案 | Nordic 52（17 字节）/ Nordic 54（64 字节） | **ATK Zero 已实机验证**（Nordic 54，100%）；其他型号按协议实现 |
 | ATK Horizon | 有线耳机，无电池 | 只在设备清单显示，不生成电量卡片 |
 | LEOBOG Hi75c Pro / HI98PRO | `3554:FA09`，FF02/0002，20 字节 `13 CA` | 配置已内置，按型号名自动选择；待实机确认 |
+| Flydigi Vader 5 Pro | `37D7:2401`，FFA0，33 字节 `00 5A A5 01 02 03`，电量低 4 位 | 配置已内置，实机验证（40%→50% 充电中） |
 | 迈从 MCHOSE K7 Ultra | Realtek `0xFF01`，报告 `0x11/0x13`，`0xE2` 电量事件 | **已实机验证**（2.4G，83%） |
 | 迈从 MCHOSE L7 Pro | 同上（Realtek `0xFF01`） | 协议已实现，待 L7 Pro 实机验证 |
 | Razer 雷蛇无线鼠标 | 90 字节特性报告，命令类 `0x02/0x07` | 按 OpenRazer 公开协议实现 |
@@ -280,7 +281,7 @@ GearPower.exe --tray-preview  生成托盘电池预览图
 
 ## 构建
 
-当前版本：**1.2.5**。需要 Windows 10/11 自带的 .NET Framework 4.8 与 `csc.exe`（无需 Visual Studio / .NET SDK）。
+当前版本：**1.2.6**。需要 Windows 10/11 自带的 .NET Framework 4.8 与 `csc.exe`（无需 Visual Studio / .NET SDK）。
 
 ```powershell
 git clone https://github.com/XAVIER0229/GearPower.git
@@ -380,7 +381,7 @@ Razer、ASUS ROG、HyperX、ATK、VXE、Lamzu、Logitech 等名称和商标归�
 
 ## 版本
 
-当前公开版本 **1.2.5**，变更见 [CHANGELOG.md](CHANGELOG.md)。当前发布说明见 [docs/releases](docs/releases/)，历史版本折叠归档在 [docs/releases/archive](docs/releases/archive/)。
+当前公开版本 **1.2.6**，变更见 [CHANGELOG.md](CHANGELOG.md)。当前发布说明见 [docs/releases](docs/releases/)，历史版本折叠归档在 [docs/releases/archive](docs/releases/archive/)。
 
 ## License
 

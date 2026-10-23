@@ -101,3 +101,4 @@ GearPower 支持通过 JSON 配置为厂商 HID 设备增加电量读取，不�
 - `profiles/leobog-hi75cpro.json`
 - `profiles/leobog-hi98pro.json`
 - `profiles/asus-rog-pelta-2-4g.json`
+- `profiles/flydigi-vader-5-pro.json`
