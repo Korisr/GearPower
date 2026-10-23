@@ -309,6 +309,16 @@
                     Foreground="{DynamicResource TabInactiveForegroundBrush}" Margin="2,0,0,0"/>
           </StackPanel>
         </Border>
+        <Border Background="{DynamicResource SummaryBrush}" BorderBrush="{DynamicResource SummaryBorderBrush}"
+                BorderThickness="1" CornerRadius="12" Padding="10,5" Margin="8,0,0,0"
+                ToolTip="显示或隐藏蓝牙设备电量；关闭后历史蓝牙卡片暂时隐藏">
+          <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <TextBlock Text="蓝牙" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
+                       VerticalAlignment="Center"/>
+            <ToggleButton x:Name="BluetoothEnabledSwitch" Style="{StaticResource IosSwitch}" Margin="8,0,0,0"
+                          AutomationProperties.Name="显示蓝牙设备电量" VerticalAlignment="Center"/>
+          </StackPanel>
+        </Border>
         <Button x:Name="RefreshButton" Style="{StaticResource GhostButton}" Width="38" Height="36" Padding="0"
                 Margin="4,0,0,0" ToolTip="立即重新扫描（F5）">
           <TextBlock x:Name="RefreshGlyph" Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="15"

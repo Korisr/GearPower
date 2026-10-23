@@ -23,6 +23,7 @@ Windows 10/11 · .NET Framework 4.8 · 单文件 · 本地读取，不联网
 - **设备适配**：新增「设备适配」页签，可从已连接接口生成 JSON 草稿、编辑、测试、导入启用、导出和移除；配置支持声明式查询、校验和、字段位解析和条件。
 - **实时日志**：设置页「实时日志」窗口显示最近 1000 行，可刷新、清空、导出。
 - **自动刷新**：30 秒 / 60 秒 / 5 分钟 / 关闭，在「设置」页调整，保存在注册表。
+- **蓝牙电量开关**：首页右上角「蓝牙」开关可关闭蓝牙耳机、Apple 键盘和系统 HFP 设备的电量读取；关闭后历史蓝牙卡片暂时隐藏，重新开启即恢复。
 - **浅色 / 深色 / 跟随系统**：在「设置 → 外观」切换，跟随系统时会在 Windows 切换白天/黑夜后自动更新。
 - **强调色**：绿色 / 粉色 / 黄色 / 蓝色四套强调色，浅色和深色主题各有对应色值。
 - **设备支持入口**：设备清单底部提供「提交给开发者」按钮，打开 GitHub 新建 Issue，方便附上诊断信息。
@@ -279,7 +280,7 @@ GearPower.exe --tray-preview  生成托盘电池预览图
 
 ## 构建
 
-当前版本：**1.2.4**。需要 Windows 10/11 自带的 .NET Framework 4.8 与 `csc.exe`（无需 Visual Studio / .NET SDK）。
+当前版本：**1.2.5**。需要 Windows 10/11 自带的 .NET Framework 4.8 与 `csc.exe`（无需 Visual Studio / .NET SDK）。
 
 ```powershell
 git clone https://github.com/XAVIER0229/GearPower.git
@@ -379,7 +380,7 @@ Razer、ASUS ROG、HyperX、ATK、VXE、Lamzu、Logitech 等名称和商标归�
 
 ## 版本
 
-当前公开版本 **1.2.4**，变更见 [CHANGELOG.md](CHANGELOG.md)。当前发布说明见 [docs/releases](docs/releases/)，历史版本折叠归档在 [docs/releases/archive](docs/releases/archive/)。
+当前公开版本 **1.2.5**，变更见 [CHANGELOG.md](CHANGELOG.md)。当前发布说明见 [docs/releases](docs/releases/)，历史版本折叠归档在 [docs/releases/archive](docs/releases/archive/)。
 
 ## License
 

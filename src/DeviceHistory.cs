@@ -24,6 +24,7 @@ namespace GearPower
             public int? Percent;
             public bool Charging;
             public bool Full;
+            public bool IsBluetooth;
             public DateTime LastSeen;
             public ushort Vid;
             public ushort Pid;
@@ -94,6 +95,7 @@ namespace GearPower
                     }
 
                     entry.LastSeen = DateTime.Now;
+                    entry.IsBluetooth = reading.IsBluetooth;
                     if (!string.IsNullOrEmpty(reading.Name)) entry.Name = reading.Name;
                     if (!string.IsNullOrEmpty(reading.Vendor)) entry.Vendor = reading.Vendor;
                     entry.Kind = reading.Kind;
@@ -146,6 +148,7 @@ namespace GearPower
             reading.Full = entry.Full;
             reading.Asleep = false;
             reading.FromCache = true;
+            reading.IsBluetooth = entry.IsBluetooth;
             reading.Disconnected = true;
             reading.Updated = entry.LastSeen;
             reading.Vid = entry.Vid;
@@ -176,7 +179,8 @@ namespace GearPower
                               entry.LastSeen.ToBinary().ToString(CultureInfo.InvariantCulture) + "\t" +
                               entry.Vid.ToString(CultureInfo.InvariantCulture) + "\t" +
                               entry.Pid.ToString(CultureInfo.InvariantCulture) + "\t" +
-                              Escape(entry.Path));
+                              Escape(entry.Path) + "\t" +
+                              (entry.IsBluetooth ? "1" : "0"));
                 }
                 File.WriteAllLines(FilePath, lines, Encoding.UTF8);
             }
@@ -225,6 +229,7 @@ namespace GearPower
                     entry.Vid = vid;
                     entry.Pid = pid;
                     entry.Path = parts[12];
+                    entry.IsBluetooth = parts.Length > 13 && parts[13] == "1";
                     Entries[entry.Id] = entry;
                 }
             }

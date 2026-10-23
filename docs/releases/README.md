@@ -4,7 +4,7 @@
 
 ## 当前版本
 
-- [GearPower v1.2.4](RELEASE_NOTES_v1.2.4.md) — 随附协议内嵌、设备命名明确
+- [GearPower v1.2.5](RELEASE_NOTES_v1.2.5.md) — 可选蓝牙设备电量显示
 
 ## 历史版本
 
@@ -13,6 +13,7 @@
 
 | 版本 | 类型 | 说明 |
 | --- | --- | --- |
+| [v1.2.4](archive/RELEASE_NOTES_v1.2.4.md) | 正式版 | 随附协议内嵌、设备命名明确 |
 | [v1.2.3](archive/RELEASE_NOTES_v1.2.3.md) | 正式版 | 三设备适配：Razer DeathAdder V4 Pro、Logitech PRO X C547、ASUS ROG PELTA |
 | [v1.2.1-beta](archive/RELEASE_NOTES_v1.2.1-beta.md) | beta | Lamzu Thorn V2 型号映射 |
 | [v1.2.0-beta](archive/RELEASE_NOTES_v1.2.0-beta.md) | beta | 设备适配、清单分组、实时日志 |

@@ -64,6 +64,7 @@ namespace GearPower
         private readonly Button refreshOffOption;
         private readonly ToggleButton trayEnabledSwitch;
         private readonly ToggleButton hoverEnabledSwitch;
+        private readonly ToggleButton bluetoothEnabledSwitch;
         private readonly Button closeAskOption;
         private readonly Button closeTrayOption;
         private readonly Button closeExitOption;
@@ -160,6 +161,7 @@ namespace GearPower
             refreshOffOption = Find<Button>("RefreshOffOption");
             trayEnabledSwitch = Find<ToggleButton>("TrayEnabledSwitch");
             hoverEnabledSwitch = Find<ToggleButton>("HoverEnabledSwitch");
+            bluetoothEnabledSwitch = Find<ToggleButton>("BluetoothEnabledSwitch");
             closeAskOption = Find<Button>("CloseAskOption");
             closeTrayOption = Find<Button>("CloseTrayOption");
             closeExitOption = Find<Button>("CloseExitOption");
@@ -226,6 +228,7 @@ namespace GearPower
             refreshOffOption.Click += (s, e) => SetRefreshSeconds(0);
             trayEnabledSwitch.Click += (s, e) => SetTrayEnabled(trayEnabledSwitch.IsChecked == true);
             hoverEnabledSwitch.Click += (s, e) => SetHoverEnabled(hoverEnabledSwitch.IsChecked == true);
+            bluetoothEnabledSwitch.Click += (s, e) => SetBluetoothEnabled(bluetoothEnabledSwitch.IsChecked == true);
             closeAskOption.Click += (s, e) => SetCloseAction(0);
             closeTrayOption.Click += (s, e) => SetCloseAction(1);
             closeExitOption.Click += (s, e) => SetCloseAction(2);
@@ -804,6 +807,8 @@ namespace GearPower
             if (dangerColor is int) taskbarDangerColor = FromArgb((int)dangerColor);
             object contrast = ReadSetting("TaskbarHighContrast");
             if (contrast is int) taskbarHighContrast = (int)contrast != 0;
+            object bluetooth = ReadSetting("BluetoothBattery");
+            if (bluetooth is int) DisplaySettings.BluetoothEnabled = (int)bluetooth != 0;
         }
 
         private static int ToArgb(Color color)
@@ -865,6 +870,7 @@ namespace GearPower
                         key.SetValue("TaskbarNormalColor", ToArgb(taskbarNormalColor));
                         key.SetValue("TaskbarWarnColor", ToArgb(taskbarWarnColor));
                         key.SetValue("TaskbarDangerColor", ToArgb(taskbarDangerColor));
+                        key.SetValue("BluetoothBattery", DisplaySettings.BluetoothEnabled ? 1 : 0);
                         key.SetValue("TaskbarHighContrast", taskbarHighContrast ? 1 : 0);
                     }
                 }
@@ -934,6 +940,15 @@ namespace GearPower
             ShowToast(enabled ? "悬停卡片已开启" : "悬停卡片已关闭");
         }
 
+        private void SetBluetoothEnabled(bool enabled)
+        {
+            DisplaySettings.BluetoothEnabled = enabled;
+            SaveSettings();
+            RefreshSettingsState();
+            Scan();
+            ShowToast(enabled ? "蓝牙设备电量显示已开启" : "蓝牙设备电量显示已关闭");
+        }
+
         private void SetCloseAction(int action)
         {
             if (action == 1 && (!trayEnabled || lowIntegrity))
@@ -979,6 +994,8 @@ namespace GearPower
             hoverEnabledSwitch.IsEnabled = hoverAvailable;
             hoverEnabledSwitch.IsChecked = hoverEnabled && hoverAvailable;
             hoverEnabledSwitch.ToolTip = hoverAvailable ? "悬停显示电量卡片" : "需要先开启托盘图标";
+            bluetoothEnabledSwitch.IsChecked = DisplaySettings.BluetoothEnabled;
+            bluetoothEnabledSwitch.ToolTip = "读取并显示蓝牙耳机、键盘等设备的电量";
 
             bool closeChoices = trayEnabled && !lowIntegrity;
             if (!closeChoices) closeAction = 2;
@@ -1180,6 +1197,9 @@ namespace GearPower
                     display = result.Readings;
                 }
             }
+
+            if (!DisplaySettings.BluetoothEnabled)
+                display = display.Where(r => !r.IsBluetooth).ToList();
 
             lastReadings = display;
             lastInventory = result.Inventory;

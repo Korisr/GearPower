@@ -49,6 +49,7 @@ namespace GearPower
             var watch = Stopwatch.StartNew();
             var result = new ScanResult();
             ProfileRunner.Reload();
+            bool includeBluetooth = DisplaySettings.BluetoothEnabled;
 
             List<HidInterfaceInfo> interfaces;
             try
@@ -86,6 +87,7 @@ namespace GearPower
             {
                 DeviceGroup group = groups[key];
                 PrepareGroup(group);
+                if (!includeBluetooth && group.Bluetooth) continue;
                 ProbeResult probe = null;
                 try
                 {
@@ -123,6 +125,7 @@ namespace GearPower
                 if (reading.Percent.HasValue && reading.Id.StartsWith("container:", StringComparison.OrdinalIgnoreCase))
                     hidContainers.Add(reading.Id.Substring("container:".Length));
             }
+            if (includeBluetooth)
             try
             {
                 List<BluetoothBatteryInfo> bt = HidEnumerator.EnumerateBluetoothBattery();
@@ -230,6 +233,7 @@ namespace GearPower
             reading.Vendor = group.Vendor;
             reading.Kind = group.Kind;
             reading.Transport = L10n.Transport(group.Vid, group.Pid, group.Product, group.Bluetooth);
+            reading.IsBluetooth = group.Bluetooth;
             reading.Protocol = probe.Protocol;
             reading.Percent = probe.Percent;
             reading.Charging = probe.Charging;

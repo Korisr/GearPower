@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.5] - 2026-10-23
+
+### Features
+
+- 首页右上角新增「蓝牙」电量显示开关，默认开启
+- 关闭后不再枚举系统蓝牙电池属性，也不探测蓝牙 HID 设备电量
+- 历史蓝牙卡片随开关暂时隐藏，重新开启后恢复
+- 开关状态保存在 `HKCU\Software\GearPower\BluetoothBattery`
+
+### Documentation
+
+- Release Notes 归档到 `docs/releases/archive/`，设备文档移动到 `docs/`
+
 ## [1.2.4] - 2026-10-23
 
 ### Features
