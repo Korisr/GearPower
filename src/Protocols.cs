@@ -86,7 +86,8 @@ namespace GearPower
             new LamzuProtocol(),
             new HyperXProtocol(),
             new LogitechProtocol(),
-            new GenericHidBatteryProtocol()
+            new GenericHidBatteryProtocol(),
+            new AppleKeyboardProtocol()
         };
 
         public static ProbeResult Probe(DeviceGroup group)

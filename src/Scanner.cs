@@ -117,9 +117,11 @@ namespace GearPower
 
             // Bluetooth devices that expose a Windows battery property.
             var hidContainers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (HidInterfaceInfo iface in interfaces)
+            foreach (DeviceReading reading in result.Readings)
             {
-                if (!string.IsNullOrEmpty(iface.ContainerId)) hidContainers.Add(iface.ContainerId);
+                // An enumerated HID interface does not imply a successful battery read.
+                if (reading.Percent.HasValue && reading.Id.StartsWith("container:", StringComparison.OrdinalIgnoreCase))
+                    hidContainers.Add(reading.Id.Substring("container:".Length));
             }
             try
             {
@@ -139,6 +141,20 @@ namespace GearPower
                     reading.Updated = DateTime.Now;
                     reading.Note = "系统蓝牙电量属性";
                     reading.IsBluetooth = true;
+                    // Replace an identified HID device without a level with the system reading.
+                    if (!string.IsNullOrEmpty(info.ContainerId))
+                    {
+                        DeviceReading pending = result.Readings.FirstOrDefault(r =>
+                            string.Equals(r.Id, "container:" + info.ContainerId, StringComparison.OrdinalIgnoreCase));
+                        if (pending != null)
+                        {
+                            pending.Percent = info.Percent;
+                            pending.Protocol = reading.Protocol;
+                            pending.Note = reading.Note;
+                            pending.Transport = "蓝牙";
+                            continue;
+                        }
+                    }
                     result.Readings.Add(reading);
                 }
             }
@@ -174,6 +190,9 @@ namespace GearPower
             });
 
             HidInterfaceInfo primary = group.Interfaces[0];
+            group.Bluetooth = group.Interfaces.Any(i =>
+                (i.Path ?? "").IndexOf("{00001124-0000-1000-8000-00805f9b34fb}", StringComparison.OrdinalIgnoreCase) >= 0
+                || (i.InstanceId ?? "").StartsWith("BTH", StringComparison.OrdinalIgnoreCase));
             string product = group.Interfaces
                 .Select(i => L10n.CleanProduct(i.Product))
                 .Where(s => !string.IsNullOrEmpty(s))
@@ -203,14 +222,14 @@ namespace GearPower
 
         private static DeviceReading ToReading(DeviceGroup group, ProbeResult probe)
         {
-            if (!probe.Percent.HasValue && !probe.Charging && !probe.Full && !probe.Asleep) return null;
+            if (!probe.Percent.HasValue && !probe.Charging && !probe.Full && !probe.Asleep && !probe.DeviceDetected) return null;
 
             var reading = new DeviceReading();
             reading.Id = group.Key;
             reading.Name = string.IsNullOrEmpty(probe.ModelName) ? group.Name : probe.ModelName;
             reading.Vendor = group.Vendor;
             reading.Kind = group.Kind;
-            reading.Transport = L10n.Transport(group.Vid, group.Pid, group.Product, false);
+            reading.Transport = L10n.Transport(group.Vid, group.Pid, group.Product, group.Bluetooth);
             reading.Protocol = probe.Protocol;
             reading.Percent = probe.Percent;
             reading.Charging = probe.Charging;
@@ -261,7 +280,7 @@ namespace GearPower
                 row.Interface = iface.InterfaceNumber >= 0 ? iface.InterfaceNumber.ToString(CultureInfo.InvariantCulture) : "—";
                 row.Reports = iface.ReportsText;
                 row.Path = iface.Path;
-                row.IsSupported = reading != null;
+                row.IsSupported = reading != null && (reading.Percent.HasValue || reading.Charging || reading.Full || reading.Asleep);
 
                 if (reading != null)
                 {
@@ -273,7 +292,7 @@ namespace GearPower
                     }
                     else if (reading.Percent.HasValue) row.Status = "电量 " + reading.Percent.Value + "%";
                     else if (reading.Charging) row.Status = "充电中";
-                    else row.Status = "已识别";
+                    else row.Status = "已识别 · 未读到电量";
                     row.Status += " · " + reading.Protocol;
                 }
                 else if (iface.FindBatteryValueCap() != null)
@@ -290,7 +309,8 @@ namespace GearPower
                 detail.AppendLine("VID:PID  " + iface.VidPid);
                 detail.AppendLine("用途页  " + iface.UsageText);
                 detail.AppendLine("报告    " + iface.ReportsText);
-                detail.AppendLine("传输    " + L10n.Transport(iface.Vid, iface.Pid, group != null ? group.Product : iface.Product, false));
+                detail.AppendLine("传输    " + L10n.Transport(iface.Vid, iface.Pid, group != null ? group.Product : iface.Product, group != null && group.Bluetooth));
+                if (reading != null && !string.IsNullOrEmpty(reading.Note)) detail.AppendLine("诊断    " + reading.Note);
                 detail.AppendLine("接口号  " + row.Interface);
                 detail.AppendLine("路径    " + iface.Path);
                 if (!string.IsNullOrEmpty(iface.InstanceId)) detail.AppendLine("实例    " + iface.InstanceId);

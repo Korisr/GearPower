@@ -73,6 +73,7 @@ namespace GearPower
 
     public sealed class ProbeResult
     {
+        public bool DeviceDetected;
         public int? Percent;
         public bool Charging;
         public bool Full;
@@ -249,6 +250,8 @@ namespace GearPower
         {
             switch (vid)
             {
+                case 0x004C: return "Apple 苹果";
+                case 0x05AC: return "Apple 苹果";
                 case 0x373B: return "ATK";
                 case 0x3554: return "VXE / VGN";
                 case 0x260D: return "达尔优";

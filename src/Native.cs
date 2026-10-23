@@ -140,6 +140,7 @@ namespace GearPower
         internal static extern bool SetWindowPos(IntPtr hwnd, IntPtr after, int x, int y, int cx, int cy, uint flags);
 
         public const uint DIGCF_PRESENT = 0x00000002;
+        public const uint DIGCF_ALLCLASSES = 0x00000004;
         public const uint DIGCF_DEVICEINTERFACE = 0x00000010;
 
         public const uint GENERIC_READ = 0x80000000;
@@ -168,7 +169,6 @@ namespace GearPower
         public static readonly DevPropKey KeyContainerId = new DevPropKey(new Guid("8C7ED206-3F8A-4827-B3AB-AE9E1FAEFC6C"), 2);
         public static readonly DevPropKey KeyInstanceId = new DevPropKey(new Guid("78C34FC8-104A-4ACA-9EA4-524D52996E57"), 256);
         public static readonly DevPropKey KeyBluetoothBattery = new DevPropKey(new Guid("104EA319-6EE2-4701-BD47-8DDBF425BBE5"), 2);
-        public static readonly DevPropKey KeyBluetoothBattery2 = new DevPropKey(new Guid("2BD67D8B-8BEB-48D5-87E0-6CDA3428040A"), 2);
 
         [StructLayout(LayoutKind.Sequential)]
         public struct Point32
@@ -844,8 +844,12 @@ namespace GearPower
         {
             var result = new List<BluetoothBatteryInfo>();
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            Guid guid = NativeMethods.BluetoothClassGuid;
-            IntPtr set = NativeMethods.SetupDiGetClassDevsW(ref guid, IntPtr.Zero, IntPtr.Zero, NativeMethods.DIGCF_PRESENT);
+            var deviceNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            // HFP battery properties can live on a System-class BTHENUM node,
+            // not on the Bluetooth-class device shown in Settings.
+            Guid guid = Guid.Empty;
+            IntPtr set = NativeMethods.SetupDiGetClassDevsW(ref guid, IntPtr.Zero, IntPtr.Zero,
+                NativeMethods.DIGCF_PRESENT | NativeMethods.DIGCF_ALLCLASSES);
             if (set == IntPtr.Zero || set == new IntPtr(-1)) return result;
             try
             {
@@ -857,14 +861,18 @@ namespace GearPower
                     if (!NativeMethods.SetupDiEnumDeviceInfo(set, index, ref devInfo)) break;
                     index++;
 
-                    string name = GetStringProperty(set, ref devInfo, NativeMethods.KeyFriendlyName);
-                    string container = GetGuidProperty(set, ref devInfo, NativeMethods.KeyContainerId);
                     string instance = GetStringProperty(set, ref devInfo, NativeMethods.KeyInstanceId);
                     if (string.IsNullOrEmpty(instance)) instance = GetInstanceId(devInfo.DevInst);
+                    if (!WindowsBatteryProperty.IsBluetoothInstance(instance)) continue;
+                    string name = GetStringProperty(set, ref devInfo, NativeMethods.KeyFriendlyName);
+                    string container = GetGuidProperty(set, ref devInfo, NativeMethods.KeyContainerId);
+                    if (instance.StartsWith("BTHENUM\\DEV_", StringComparison.OrdinalIgnoreCase)
+                        && !string.IsNullOrEmpty(container) && !string.IsNullOrEmpty(name))
+                        deviceNames[container] = name;
 
                     int percent;
                     if (!TryGetBattery(set, ref devInfo, out percent)) continue;
-                    if (percent <= 0 || percent > 100) continue;
+                    if (percent < 0 || percent > 100) continue;
 
                     string key = string.IsNullOrEmpty(container) ? instance : container;
                     if (!string.IsNullOrEmpty(key) && !seen.Add(key)) continue;
@@ -877,8 +885,7 @@ namespace GearPower
                     info.Kind = L10n.KindFromName(name);
                     if (info.Kind == DeviceKind.Other)
                     {
-                        string lower = (instance ?? "").ToLowerInvariant();
-                        if (lower.Contains("audio") || lower.Contains("a2dp") || lower.Contains("hfp")) info.Kind = DeviceKind.Headset;
+                        if (WindowsBatteryProperty.IsAudioInstance(instance)) info.Kind = DeviceKind.Headset;
                     }
                     result.Add(info);
                 }
@@ -887,51 +894,40 @@ namespace GearPower
             {
                 NativeMethods.SetupDiDestroyDeviceInfoList(set);
             }
+            foreach (BluetoothBatteryInfo info in result)
+            {
+                string deviceName;
+                if (!string.IsNullOrEmpty(info.ContainerId) && deviceNames.TryGetValue(info.ContainerId, out deviceName))
+                    info.Name = deviceName;
+            }
             return result;
         }
 
         private static bool TryGetBattery(IntPtr set, ref NativeMethods.SpDevInfoData devInfo, out int percent)
         {
             percent = -1;
-            NativeMethods.DevPropKey[] keys = new NativeMethods.DevPropKey[]
+            // {2BD67D8B-8BEB-48D5-87E0-6CDA3428040A},2 is a Bluetooth
+            // service GUID on this stack, not a second battery property.
+            NativeMethods.DevPropKey key = NativeMethods.KeyBluetoothBattery;
+            IntPtr buffer = Marshal.AllocHGlobal(64);
+            try
             {
-                NativeMethods.KeyBluetoothBattery,
-                NativeMethods.KeyBluetoothBattery2
-            };
-            foreach (NativeMethods.DevPropKey stored in keys)
-            {
-                NativeMethods.DevPropKey key = stored;
-                IntPtr buffer = Marshal.AllocHGlobal(64);
-                try
-                {
-                    uint type;
-                    uint required;
-                    if (!NativeMethods.SetupDiGetDevicePropertyW(set, ref devInfo, ref key, out type, buffer, 64, out required, 0))
-                        continue;
-                    if (type == 17)
-                    {
-                        percent = Marshal.ReadByte(buffer);
-                        return true;
-                    }
-                    if (type == 19 || type == 7)
-                    {
-                        percent = Marshal.ReadInt32(buffer);
-                        if (percent >= 0 && percent <= 100) return true;
-                        continue;
-                    }
-                    if (type == 18)
-                    {
-                        string text = Marshal.PtrToStringUni(buffer) ?? "";
-                        int value;
-                        if (int.TryParse(text.TrimEnd('%', ' '), out value)) { percent = value; return true; }
-                    }
-                }
-                finally
-                {
-                    Marshal.FreeHGlobal(buffer);
-                }
+                uint type;
+                uint required;
+                if (!NativeMethods.SetupDiGetDevicePropertyW(set, ref devInfo, ref key, out type, buffer, 64, out required, 0))
+                    return false;
+                if (required == 0 || required > 64) return false;
+                var data = new byte[required];
+                Marshal.Copy(buffer, data, 0, data.Length);
+                int? value = WindowsBatteryProperty.Parse(type, data);
+                if (!value.HasValue) return false;
+                percent = value.Value;
+                return true;
             }
-            return false;
+            finally
+            {
+                Marshal.FreeHGlobal(buffer);
+            }
         }
 
         public static void SetTitleBarTheme(IntPtr hwnd, bool dark)

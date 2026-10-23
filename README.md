@@ -208,7 +208,8 @@ Windows 10/11 · .NET Framework 4.8 · 单文件 · 本地读取，不联网
 | HyperX Cloud Alpha Wireless | 输出报告 `21 BB 0B` | 按 alphabat 协议实现 |
 | Logitech 罗技 Lightspeed / Bolt / Unifying | HID++ 2.0 `UnifiedBattery 0x1004`；旧款回退 `BatteryStatus 0x1000` / `BatteryVoltage 0x1001`；再回退 HID++ 1.0 `BatteryMileage 0x0D`；并读取 Device Name 显示 G Pro Wireless / G502 等真实型号 | 额外支持 |
 | 通用 HID 设备 | Usage Page `0x06` / Usage `0x20`（Battery Strength） | 通用兜底 |
-| 蓝牙耳机 / 鼠标 | Windows 蓝牙电量属性 | 取决于系统是否暴露该属性 |
+| Apple Magic Keyboard（PID `0267/026C`） | 只读 Input `0x90` | `004C:026C` 带数字小键盘款已实机验证（蓝牙，85%）；其他组合待验证 |
+| 蓝牙耳机 / 鼠标 | Windows 蓝牙电量属性，包含 System 类下的 HFP 设备节点 | HUAWEI FreeBuds Pro 2 已实机验证（蓝牙，90%）；取决于系统是否暴露该属性 |
 
 > ATK Zero、HyperX Cloud Flight、Lamzu 和 MCHOSE K7 Ultra 已实机验证；ATK Horizon 是有线耳机，不参与电量读取；其余协议来自公开开源项目的字段/命令说明，但手头没有对应型号逐一实机验证。若你的设备读数不对，请把「设备清单」里的诊断信息发给我，我可以按真实报告继续适配。
 >
@@ -217,6 +218,9 @@ Windows 10/11 · .NET Framework 4.8 · 单文件 · 本地读取，不联网
 > HyperX 官方软件只显示 High / Mid / Low 是它的界面选择；耳机原始电量包实际给出更细的档位（约 5–15% 一档），本程序把它换算成百分比。若你更希望只显示「高/中/低」，也可以改成三档显示。
 
 ## 已知限制
+
+* Apple 键盘的 Input `0x90` 查询可能受第三方过滤驱动影响。本机安装 Magic Utilities 时查询失败，正常卸载并恢复 Apple `KeyMagic2` 后读到 85%；程序不会自动修改或卸载驱动。
+* 蓝牙耳机电量使用 Windows 提供的属性，更新频率取决于系统和耳机，不代表左右耳及充电盒的独立电量。
 
 - 任务栏电量条是实验性 Overlay，只在 Windows 11 徽标居中且左侧有空间时显示；徽标靠左、全屏或空间不足时会自动隐藏。
 - 不同厂商、接收器固件和地区版本可能使用不同 HID 报告；表中未实机验证的型号可能需要继续适配。
