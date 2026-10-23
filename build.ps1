@@ -53,6 +53,8 @@ Copy-Item (Join-Path $root "CONTRIBUTING.md") $dist -Force
 Copy-Item (Join-Path $root "SECURITY.md") $dist -Force
 Copy-Item (Join-Path $root "CHANGELOG.md") $dist -Force
 Copy-Item (Join-Path $root "DEVICE_PROFILES.md") $dist -Force
+Copy-Item (Join-Path $root "DEVICE_ADAPTERS.md") $dist -Force
+Copy-Item (Join-Path $root "PATCH_NOTES.md") $dist -Force
 Get-ChildItem $root -Filter "RELEASE_NOTES_*.md" -File | Copy-Item -Destination $dist -Force
 $assetTarget = Join-Path $dist "assets"
 New-Item -ItemType Directory -Force -Path $assetTarget | Out-Null

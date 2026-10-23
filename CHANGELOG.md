@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.3] - 2026-10-23
+
+### Features
+
+- 支持 Apple Magic Keyboard（`004C/05AC:0267/026C`）只读 Input `0x90` 电量，实机 85%
+- 蓝牙电量枚举覆盖 System 类 HFP/BTHENUM 节点，HUAWEI FreeBuds Pro 2 实机 90%
+- 支持 Razer DeathAdder V4 Pro（`1532:00BF`）零访问特性报告，实机 58%
+- 支持 Logitech PRO X Wireless（C547）休眠缓存卡片，实机 90%
+- 支持 ASUS ROG PELTA 2.4GHz（`0B05:1B84`）`CC 12 07` 配置，实机 86%
+- HID Feature 读写和配置执行增加零访问句柄回退，兼容被独占的鼠标集合
+- 设备清单显示「已识别 · 未读到电量」和可复制的诊断说明
+
 ## [1.2.1-beta] - 2026-10-22
 
 ### Features

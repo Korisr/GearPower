@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "asus-rog-pelta-2-4g",
+  "name": "ROG PELTA (2.4GHz)",
+  "vendor": "ASUS",
+  "kind": "headset",
+  "enabled": true,
+  "priority": 90,
+  "matches": [
+    {
+      "vid": "0B05",
+      "pid": "1B84",
+      "usagePage": "FF00",
+      "usage": "0001",
+      "inputLength": 64,
+      "outputLength": 64,
+      "featureLength": 0,
+      "transport": "wireless"
+    }
+  ],
+  "steps": [
+    {
+      "id": "battery",
+      "method": "output",
+      "request": "CC 12 07",
+      "attempts": 3,
+      "timeoutMs": 600,
+      "response": {
+        "length": 64,
+        "prefix": "CC 12 07"
+      },
+      "failureNote": "耳机未连接或未唤醒"
+    }
+  ],
+  "result": {
+    "percent": {
+      "step": "battery",
+      "offset": 6
+    },
+    "note": "ASUS 0xCC / 0x12 0x07 · 电量在第 6 字节 · 实机 86%"
+  }
+}

@@ -85,7 +85,14 @@ namespace GearPower
             if (profile == null || profile.steps == null || profile.result == null) return null;
             var responses = new Dictionary<string, byte[]>(StringComparer.Ordinal);
             string error;
-            using (HidHandle handle = HidHandle.Open(iface.Path, true, out error))
+            HidHandle handle = HidHandle.Open(iface.Path, true, out error);
+            if (handle == null)
+            {
+                // A mouse/keyboard top-level collection is often locked against
+                // write sharing; feature queries still work on a zero-access handle.
+                handle = HidHandle.Open(iface.Path, false, out error);
+            }
+            using (handle)
             {
                 if (handle == null)
                 {

@@ -218,7 +218,9 @@ namespace GearPower
             Add(m, 0x1532, 0x00D0, "Razer Pro Click V2", DeviceKind.Mouse, false);
             Add(m, 0x1532, 0x0555, "Razer BlackShark V2 Pro 2.4", DeviceKind.Headset, true);
             Add(m, 0x1532, 0x056A, "Razer Seiren V3 Mini", DeviceKind.Microphone, false);
+            Add(m, 0x046D, 0xC547, "Logitech PRO X Wireless", DeviceKind.Headset, true);
             Add(m, 0x0B05, 0x193E, "ASUS ROG Falchion", DeviceKind.Keyboard, false);
+            Add(m, 0x0B05, 0x1B84, "ASUS ROG PELTA (2.4GHz)", DeviceKind.Headset, true);
             Add(m, 0xCAFE, 0x910B, "NINX NX60 ANSI", DeviceKind.Keyboard, false);
             Add(m, 0xC019, 0x0401, "HM HUB", DeviceKind.Dock, false);
             Add(m, 0xC019, 0xB300, "HM HubX", DeviceKind.Dock, false);

@@ -458,9 +458,10 @@ namespace GearPower
             if (disposed) return false;
             int error;
             if (Ioctl(NativeMethods.IOCTL_HID_GET_FEATURE, null, 0, buffer, buffer.Length, timeoutMs, out error)) return true;
-            if (error == NativeMethods.ERROR_INVALID_FUNCTION || error == NativeMethods.ERROR_NOT_SUPPORTED)
-                return NativeMethods.HidD_GetFeature(handle, buffer, buffer.Length);
-            return false;
+            // A mouse/keyboard top-level collection is often opened by Windows
+            // without write sharing, so even a query-only handle can be denied
+            // the IOCTL. HidD_* works on the same zero-access handle.
+            return NativeMethods.HidD_GetFeature(handle, buffer, buffer.Length);
         }
 
         public bool SetFeature(byte[] buffer)
@@ -473,9 +474,7 @@ namespace GearPower
             if (disposed) return false;
             int error;
             if (Ioctl(NativeMethods.IOCTL_HID_SET_FEATURE, buffer, buffer.Length, null, 0, timeoutMs, out error)) return true;
-            if (error == NativeMethods.ERROR_INVALID_FUNCTION || error == NativeMethods.ERROR_NOT_SUPPORTED)
-                return NativeMethods.HidD_SetFeature(handle, buffer, buffer.Length);
-            return false;
+            return NativeMethods.HidD_SetFeature(handle, buffer, buffer.Length);
         }
 
         public bool GetInputReport(byte[] buffer)

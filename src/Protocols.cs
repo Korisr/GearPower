@@ -215,7 +215,7 @@ namespace GearPower
         {
             response = null;
             string error;
-            using (HidHandle handle = HidHandle.Open(iface.Path, true, out error))
+            using (HidHandle handle = HidHandle.Open(iface.Path, false, out error))
             {
                 if (handle == null) return false;
                 if (!handle.SetFeature(request)) return false;
@@ -279,7 +279,9 @@ namespace GearPower
                 {
                     byte[] request = BuildRequest(iface.FeatureLength, tx);
                     string error;
-                    using (HidHandle handle = HidHandle.Open(iface.Path, true, out error))
+                    // Feature reports are readable on a zero-access handle even
+                    // while Windows owns the mouse collection exclusively.
+                    using (HidHandle handle = HidHandle.Open(iface.Path, false, out error))
                     {
                         if (handle == null) continue;
                         if (!handle.SetFeature(request)) continue;
@@ -1167,8 +1169,12 @@ namespace GearPower
                     }
                     if (dev == 0)
                     {
-                        Log.Debug("Logitech HID++ device index not found");
-                        return null;
+                        // Receiver is present but the paired device is powered
+                        // off or asleep. Keep the card and let BatteryCache show
+                        // the last known level instead of dropping the device.
+                        Log.Debug("Logitech HID++ device index not found; receiver idle");
+                        return Result(null, false, false, true, Name,
+                            "HID++ 接收器在线 · 设备休眠或未唤醒");
                     }
 
                     // A receiver often answers the wake-up ping before the
